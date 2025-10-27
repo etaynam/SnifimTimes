@@ -1,70 +1,94 @@
-# Getting Started with Create React App
+# מערכת ניהול שעות פעילות - מחסני השוק
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+מערכת פנימית מאובטחת לניהול שעות פעילות של סניפי רשת מחסני השוק.
 
-## Available Scripts
+## תכונות
 
-In the project directory, you can run:
+- 🔐 התחברות מאובטחת באמצעות OTP לב-SMS
+- 📱 עיצוב מותאם למובייל
+- 🌐 תמיכה מלאה בעברית ומיצוי ימני (RTL)
+- 👥 ממשק מנהל סניף לעדכון שעות פעילות
+- 🛡️ ממשק סופר אדמין לניהול המערכת
 
-### `npm start`
+## התקנה
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+1. התקן את התלויות:
+```bash
+npm install
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+2. צור קובץ `.env` בהתאם ל-`.env.example`:
+```bash
+cp .env.example .env
+```
 
-### `npm test`
+3. מלא את הפרטים של Supabase בקובץ `.env`:
+```
+REACT_APP_SUPABASE_URL=your_supabase_url
+REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+4. הפעל את הפרויקט:
+```bash
+npm start
+```
 
-### `npm run build`
+## הגדרת Supabase
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. יצור פרויקט חדש ב-Supabase
+2. הכנס ל-SQL Editor והרץ את הקוד ב-`supabase-schema.sql`
+3. הגדר את שירות ה-SMS לאימות (OTP)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## שימוש במערכת
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### מנהל סניף
 
-### `npm run eject`
+1. הכנס למספר הטלפון
+2. קבל קוד OTP ב-SMS
+3. הכנס את הקוד להתחברות
+4. עדכן את שעות הפתיחה והסגירה לכל סניף משויך
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### סופר אדמין
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+1. התחבר כמנהל עם הרשאות אדמין
+2. נהל סניפים חדשים
+3. הוסף מנהלים חדשים וקבע הרשאות
+4. שבץ מנהלים לסניפים
+5. צפה בשעות הפעילות של כל הסניפים
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## טבלאות נתונים
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+המערכת משתמשת ב-3 טבלאות עיקריות:
 
-## Learn More
+- `branches` - רשימת הסניפים ושעות הפעילות
+- `managers` - רשימת המנהלים וההרשאות שלהם
+- `manager_branches` - שיוך מנהלים לסניפים
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## אבטחה
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- כל המידע הרגיש נשמר בבק אנד (Supabase)
+- אימות באמצעות OTP
+- Row Level Security (RLS) למניעת גישה לא מורשית
+- אין חשיפה של מידע רגיש ב-devtools או בדפדפן
 
-### Code Splitting
+## פיתוח
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+הפרויקט בנוי באמצעות:
+- React 19
+- React Router
+- Supabase
+- CSS3
 
-### Analyzing the Bundle Size
+## קובצי עניין
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- `src/components/Login.js` - תהליך ההתחברות
+- `src/components/BranchManager.js` - ממשק מנהל הסניף
+- `src/components/SuperAdmin.js` - ממשק סופר אדמין
+- `src/contexts/AuthContext.js` - ניהול ההתחברות
+- `supabase-schema.sql` - סכמת מסד הנתונים
 
-### Making a Progressive Web App
+## צבעים
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- צבע ראשי: #009245
+- רקע: גרדיאנט סגול
+- טקסט: RTL עברית

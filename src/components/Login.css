@@ -1,0 +1,165 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  background: #f5f5f5;
+}
+
+.card-header-top {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.back-arrow-btn {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  color: #666;
+  transition: all 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.back-arrow-btn:hover {
+  background: #f8f9fa;
+  border-color: #009245;
+  color: #009245;
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 146, 69, 0.15);
+}
+
+.back-arrow-btn svg {
+  display: block;
+}
+
+.logo {
+  max-width: 150px;
+  height: auto;
+  margin-bottom: 20px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.login-container .card {
+  max-width: 500px;
+  width: 100%;
+  min-height: 450px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.otp-inputs {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin: 30px 0 20px 0;
+  direction: ltr;
+}
+
+.otp-input {
+  width: 70px;
+  height: 70px;
+  min-width: 70px;
+  min-height: 70px;
+  aspect-ratio: 1 / 1;
+  text-align: center;
+  font-size: 2.8rem !important;
+  font-weight: 700;
+  border: 1px solid #b0b0b0;
+  border-radius: 14px;
+  background: #f8f9fa;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  caret-color: transparent;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.otp-input:hover {
+  background: #f0f0f0;
+  border-color: #9e9e9e;
+}
+
+.otp-input:focus {
+  background: white;
+  color: #333;
+  border-color: #009245;
+  border-width: 2px;
+  transform: scale(1.08);
+}
+
+.otp-input::placeholder {
+  color: #ccc;
+}
+
+.otp-hint {
+  text-align: center;
+  color: #666;
+  font-size: 13px;
+  margin-top: 1px;
+  margin-bottom: 0;
+  font-weight: 500;
+}
+
+@media (min-width: 769px) {
+  .login-container .card {
+    max-width: 520px;
+  }
+  
+  .otp-inputs {
+    gap: 20px;
+  }
+  
+  .otp-input {
+    width: 80px;
+    height: 80px;
+    font-size: 2.8rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .login-container .card {
+    min-height: 400px;
+  }
+  
+  .otp-input {
+    width: 65px;
+    height: 65px;
+    font-size: 2.8rem !important;
+    aspect-ratio: 1;
+  }
+  
+  .otp-inputs {
+    gap: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .otp-input {
+    width: 65px;
+    height: 65px;
+    font-size: 2.8rem !important;
+    aspect-ratio: 1;
+  }
+  
+  .otp-inputs {
+    gap: 12px;
+  }
+}
