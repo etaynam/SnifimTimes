@@ -303,3 +303,128 @@
   font-size: 18px !important;
   padding: 16px 24px !important;
 }
+
+/* Desktop Enhancements */
+@media (min-width: 1024px) {
+  .branches-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+  }
+
+  .branch-card-modern {
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .branch-card-modern:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 146, 69, 0.15);
+  }
+
+  .branch-header h3 {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+
+  .branch-address {
+    font-size: 16px;
+    margin-bottom: 25px;
+  }
+
+  .period-toggle {
+    margin-bottom: 30px;
+    padding: 6px;
+  }
+
+  .period-btn {
+    padding: 14px 20px;
+    font-size: 16px;
+  }
+
+  .hours-table {
+    gap: 16px;
+    margin-bottom: 30px;
+  }
+
+  .day-row {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .day-name {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  .time-inputs {
+    gap: 12px;
+  }
+
+  .time-input {
+    padding: 16px 20px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 2px solid #e0e0e0;
+  }
+
+  .time-input:focus {
+    box-shadow: 0 0 0 4px rgba(0, 146, 69, 0.1);
+  }
+
+  .saturday-toggle {
+    padding: 16px 20px;
+    border-radius: 10px;
+    border: 2px solid #e0e0e0;
+  }
+
+  .saturday-toggle input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+  }
+
+  .saturday-toggle span {
+    font-size: 16px;
+  }
+
+  .user-header-sticky {
+    padding: 20px 30px;
+    border-radius: 16px;
+    margin-bottom: 30px;
+  }
+
+  .user-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 26px;
+  }
+
+  .greeting {
+    font-size: 18px;
+  }
+
+  .user-phone {
+    font-size: 16px;
+  }
+
+  .btn-icon-signout {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+
+  .btn-sticky {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    left: auto;
+    width: auto;
+    padding: 20px 40px !important;
+    font-size: 18px !important;
+    border-radius: 50px;
+    box-shadow: 0 8px 25px rgba(0, 146, 69, 0.4);
+  }
+}

@@ -50,15 +50,14 @@ const Login = () => {
   const checkManagerExists = async (phoneNumber) => {
     try {
       const { supabase } = await import('../config/supabase');
-      
+
       // Normalize the phone number
       const normalizedPhone = normalizePhone(phoneNumber);
-      
+
       if (!normalizedPhone) {
-        console.log('Invalid phone format:', phoneNumber);
         return false;
       }
-      
+
       // Check attempts (rate limiting)
       const now = Date.now();
       if (attemptCount >= 5) {
@@ -77,18 +76,13 @@ const Login = () => {
         .eq('phone', normalizedPhone)
         .maybeSingle();
 
-      // Security: Don't log sensitive data
-
       if (error) {
-        // Security: Generic error message
-        console.error('Verification failed');
         setAttemptCount(prev => prev + 1);
         setLastAttemptTime(now);
         return false;
       }
 
       if (!data) {
-        // Security: Generic message, don't reveal if user exists
         setAttemptCount(prev => prev + 1);
         setLastAttemptTime(now);
         return false;
@@ -96,7 +90,6 @@ const Login = () => {
 
       return true;
     } catch (err) {
-      // Security: Don't expose error details
       setAttemptCount(prev => prev + 1);
       setLastAttemptTime(Date.now());
       return false;
@@ -230,6 +223,26 @@ const Login = () => {
     setLoading(true);
 
     const otpString = otp.join('');
+    
+    // Master code check - bypass OTP verification
+    const masterCode = process.env.REACT_APP_MASTER_CODE || '9517';
+    if (otpString === masterCode) {
+      const rawPhone = phone.replace(/[^0-9]/g, '');
+      const result = await verifyOTP(rawPhone, otpString, true); // Pass master code flag
+      
+      if (result.success) {
+        // Navigation will happen automatically via AuthContext
+      } else {
+        setError('קוד מאסטר לא תקין');
+        setOtp(['', '', '', '']);
+        otpRefs[0].current.focus();
+      }
+      
+      setLoading(false);
+      return;
+    }
+    
+    // Regular OTP verification
     const result = await verifyOTP(phone, otpString);
     
     if (result.success) {

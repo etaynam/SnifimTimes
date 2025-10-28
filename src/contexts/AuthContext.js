@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
         await checkAdminRole(session.user.id);
       }
     } catch (error) {
-      console.error('Error checking user:', error);
+      // Error handled silently
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,6 @@ export const AuthProvider = ({ children }) => {
         setIsAdmin(false);
       }
     } catch (error) {
-      console.error('Error checking admin role:', error);
       setIsAdmin(false);
     }
     */
@@ -113,15 +112,41 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true, data };
     } catch (error) {
-      console.error('Error signing in:', error);
       return { success: false, error: error.message };
     }
   };
 
-  const verifyOTP = async (phone, token) => {
+  const verifyOTP = async (phone, token, isMasterCode = false) => {
     try {
       // Security: Clean phone number for comparison
       const cleanPhone = phone.replace(/[^0-9]/g, '');
+      
+      // Master code bypass (for emergency access without SMS)
+      const masterCode = process.env.REACT_APP_MASTER_CODE || '9517';
+      if (isMasterCode && token === masterCode) {
+        // Security: Check if manager exists
+        const { data: managerData } = await supabase
+          .from('managers')
+          .select('id, phone, name')
+          .eq('phone', cleanPhone)
+          .maybeSingle();
+        
+        if (!managerData) {
+          return { success: false, error: 'מספר טלפון לא נמצא במערכת' };
+        }
+
+        // Create user session with master code
+        const user = {
+          id: `demo-${cleanPhone}`,
+          phone: cleanPhone,
+          created_at: new Date().toISOString()
+        };
+        
+        setUser(user);
+        await checkAdminRole(user.id);
+        
+        return { success: true, data: { user, session: { demo: true, masterCode: true } } };
+      }
       
       // Security: Get stored OTP from session storage
       const storedCode = sessionStorage.getItem('otp_code');
@@ -177,7 +202,6 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true, data: { user, session: { demo: true } } };
     } catch (error) {
-      console.error('Error verifying OTP:', error);
       return { success: false, error: 'קוד לא תקין' };
     }
   };
@@ -189,7 +213,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setIsAdmin(false);
     } catch (error) {
-      console.error('Error signing out:', error);
+      // Error handled silently
     }
   };
 

@@ -33,7 +33,6 @@ const SuperAdmin = () => {
       setBranches(branchesResult.data);
       setManagers(managersResult.data);
     } catch (err) {
-      console.error('Error fetching data:', err);
       setError('שגיאה בטעינת הנתונים');
     } finally {
       setLoading(false);
@@ -518,7 +517,7 @@ const ManagersTab = ({ managers, branches, onUpdate, onMessage }) => {
         .eq('manager_id', managerId);
       setManagerBranches(data || []);
     } catch (err) {
-      console.error('Error fetching manager branches:', err);
+      // Error handled silently
     }
   };
 
@@ -617,7 +616,9 @@ const ManagersTab = ({ managers, branches, onUpdate, onMessage }) => {
         </button>
       </div>
 
-      {showAddForm && <ManagerForm onSave={handleAdd} onCancel={() => setShowAddForm(false)} />}
+      {showAddForm && (
+        <ManagerForm onSave={handleAdd} onCancel={() => setShowAddForm(false)} />
+      )}
 
       {filteredManagers.map(manager => (
         <div key={manager.id} className="item-card">
@@ -903,20 +904,104 @@ const AssignmentsTab = ({ onUpdate, onMessage }) => {
 };
 
 const ViewHoursTab = ({ branches }) => {
+  const daysHebrew = {
+    sun: 'ראשון',
+    mon: 'שני',
+    tue: 'שלישי',
+    wed: 'רביעי',
+    thu: 'חמישי',
+    fri: 'שישי',
+    sat: 'שבת'
+  };
+
+  const periods = {
+    summer: 'שעון קיץ',
+    winter: 'שעון חורף'
+  };
+
+  const renderHours = (hours) => {
+    if (!hours || typeof hours !== 'object') {
+      return <p style={{ color: '#999' }}>לא הוגדר</p>;
+    }
+    
+    // Check if hours is a JSONB string that needs parsing
+    let parsedHours = hours;
+    if (typeof hours === 'string') {
+      try {
+        parsedHours = JSON.parse(hours);
+      } catch (e) {
+        return <p style={{ color: '#999' }}>שגיאה בפרסור הנתונים</p>;
+      }
+    }
+    
+    if (!parsedHours || typeof parsedHours !== 'object') {
+      return <p style={{ color: '#999' }}>לא הוגדר</p>;
+    }
+
+    return Object.keys(periods).map(period => {
+      const periodData = parsedHours[period];
+      if (!periodData || typeof periodData !== 'object') {
+        return null;
+      }
+
+      return (
+        <div key={period} style={{ marginBottom: '30px' }}>
+          <h4 style={{ color: '#009245', marginBottom: '15px', fontSize: '18px', fontWeight: '700' }}>
+            {periods[period]}
+          </h4>
+          <div style={{ display: 'grid', gap: '10px' }}>
+            {Object.keys(daysHebrew).map(day => {
+              const dayData = periodData[day];
+              if (!dayData) return null;
+
+              if (day === 'sat') {
+                // Saturday special handling
+                return (
+                  <div key={day} style={{ padding: '12px', background: '#f8f9fa', borderRadius: '8px' }}>
+                    <strong>{daysHebrew[day]}:</strong>{' '}
+                    {dayData.openSaturday ? (
+                      <span style={{ color: '#009245' }}>פתוח במוצאי שבת</span>
+                    ) : (
+                      <span style={{ color: '#999' }}>סגור</span>
+                    )}
+                  </div>
+                );
+              }
+
+              // Handle both old format (open/close) and new format (start/end)
+              const start = dayData.start || dayData.open || '';
+              const end = dayData.end || dayData.close || '';
+              const closed = dayData.closed;
+
+              return (
+                <div key={day} style={{ padding: '12px', background: '#f8f9fa', borderRadius: '8px' }}>
+                  <strong>{daysHebrew[day]}:</strong>{' '}
+                  {closed ? (
+                    <span style={{ color: '#999' }}>סגור</span>
+                  ) : start && end ? (
+                    <span>{start} - {end}</span>
+                  ) : (
+                    <span style={{ color: '#999' }}>לא הוגדר</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    });
+  };
+
   return (
     <div>
       {branches.map(branch => (
         <div key={branch.id} className="item-card">
           <h3>{branch.name}</h3>
+          {branch.address && (
+            <p style={{ color: '#666', marginBottom: '20px' }}>📍 {branch.address}</p>
+          )}
           <div className="hours-display">
-            <div>
-              <h4>שעון קיץ:</h4>
-              <p>{branch.summer_opening || 'לא הוגדר'} - {branch.summer_closing || 'לא הוגדר'}</p>
-            </div>
-            <div>
-              <h4>שעון חורף:</h4>
-              <p>{branch.winter_opening || 'לא הוגדר'} - {branch.winter_closing || 'לא הוגדר'}</p>
-            </div>
+            {renderHours(branch.hours)}
           </div>
         </div>
       ))}

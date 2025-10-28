@@ -32,33 +32,67 @@ const ImportBranches = ({ onMessage, onImportComplete }) => {
         return;
       }
 
-      // Get headers
-      const headers = lines[0].split(',').map(h => h.trim());
-      
-      // Parse data
+      // Parse data with proper column mapping
       const data = [];
       for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim());
+        const values = parseCSVLine(lines[i]);
         
-        if (values.length < 6) continue; // Skip incomplete rows
+        if (values.length < 6) {
+          console.log(`Skipping incomplete row ${i}:`, values);
+          continue; // Skip incomplete rows
+        }
 
         const row = {
-          branchNumber: values[0] || '',
-          branchName: values[1] || '',
-          address: values[2] || '',
-          managerName: values[3] || '',
-          managerPhone: values[4] || '',
-          format: values[5] || ''
+          branchNumber: cleanValue(values[0]), // A = מספר סניף
+          branchName: cleanValue(values[1]),   // B = שם הסניף
+          address: cleanValue(values[2]),      // C = כתובת
+          managerName: cleanValue(values[3]),  // D = שם מנהל
+          managerPhone: cleanValue(values[4]), // E = טלפון מנהל
+          format: cleanValue(values[5])        // F = פורמט
         };
+
+        // Validate required fields
+        if (!row.branchName || !row.managerPhone) {
+          console.log(`Skipping invalid row ${i}:`, row);
+          continue;
+        }
 
         data.push(row);
       }
 
+      console.log(`Parsed ${data.length} valid rows from ${lines.length - 1} total rows`);
       setParsedData(data);
       checkDuplicates(data);
     };
 
     reader.readAsText(file, 'UTF-8');
+  };
+
+  const parseCSVLine = (line) => {
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        values.push(current);
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    
+    values.push(current); // Add the last value
+    return values;
+  };
+
+  const cleanValue = (value) => {
+    if (!value) return '';
+    return value.trim().replace(/^["']|["']$/g, ''); // Remove quotes and trim
   };
 
   const checkDuplicates = async (data) => {
@@ -87,25 +121,45 @@ const ImportBranches = ({ onMessage, onImportComplete }) => {
     setLoading(true);
     
     try {
-      // First, create/update managers
+      let successCount = 0;
+      let errorCount = 0;
+      
+      // Process managers first (slow and careful)
       const managerMap = new Map();
       
-      for (const row of parsedData) {
-        if (!row.managerPhone) continue;
+      console.log('🔄 Step 1: Processing managers...');
+      for (let i = 0; i < parsedData.length; i++) {
+        const row = parsedData[i];
+        
+        if (!row.managerPhone) {
+          console.log(`Skipping row ${i + 1}: No manager phone`);
+          continue;
+        }
         
         if (!managerMap.has(row.managerPhone)) {
           try {
+            console.log(`Processing manager ${i + 1}/${parsedData.length}: ${row.managerName} (${row.managerPhone})`);
+            
             // Check if manager exists
             const { data: existing, error: checkError } = await supabase
               .from('managers')
-              .select('id, phone')
+              .select('id, phone, name')
               .eq('phone', row.managerPhone)
               .maybeSingle();
 
+            if (checkError) {
+              console.error(`Error checking manager ${row.managerPhone}:`, checkError);
+              errorCount++;
+              continue;
+            }
+
             if (existing) {
+              console.log(`Manager exists: ${existing.name} (${existing.phone})`);
               managerMap.set(row.managerPhone, existing.id);
             } else {
-              // Create new manager without user_id
+              console.log(`Creating new manager: ${row.managerName} (${row.managerPhone})`);
+              
+              // Create new manager
               const { data: newManager, error: insertError } = await supabase
                 .from('managers')
                 .insert({
@@ -116,110 +170,169 @@ const ImportBranches = ({ onMessage, onImportComplete }) => {
                 .select()
                 .single();
 
-              if (newManager && !insertError) {
+              if (insertError) {
+                console.error(`Error creating manager ${row.managerPhone}:`, insertError);
+                errorCount++;
+                continue;
+              }
+
+              if (newManager) {
+                console.log(`Manager created successfully: ${newManager.id}`);
                 managerMap.set(row.managerPhone, newManager.id);
               }
             }
+            
+            // Small delay to prevent overwhelming the database
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
           } catch (err) {
-            console.error('Error with manager:', row.managerPhone, err);
+            console.error(`Unexpected error with manager ${row.managerPhone}:`, err);
+            errorCount++;
           }
         }
       }
 
-      // Now create/update branches and assign to managers
-      for (const row of parsedData) {
-        if (!row.branchName) continue;
+      console.log(`✅ Managers processed: ${managerMap.size} unique managers`);
 
-        console.log('🔍 Processing branch:', row.branchName);
+      // Process branches (slow and careful)
+      console.log('🔄 Step 2: Processing branches...');
+      for (let i = 0; i < parsedData.length; i++) {
+        const row = parsedData[i];
+        
+        if (!row.branchName) {
+          console.log(`Skipping row ${i + 1}: No branch name`);
+          continue;
+        }
 
-        // Check if branch exists by name
-        let existingBranch = null;
         try {
-          console.log('📡 Checking if branch exists...');
-          const { data, error } = await supabase
+          console.log(`Processing branch ${i + 1}/${parsedData.length}: ${row.branchName}`);
+
+          // Check if branch exists by name
+          const { data: existingBranch, error: checkError } = await supabase
             .from('branches')
-            .select('id')
+            .select('id, name')
             .eq('name', row.branchName)
             .maybeSingle();
           
-          console.log('📦 Branch query result:', { data, error });
-          existingBranch = data;
-        } catch (err) {
-          console.error('❌ Error checking branch:', err);
-        }
-
-        let branchId;
-        
-        if (existingBranch) {
-          console.log('📝 Updating existing branch:', existingBranch.id);
-          // Update existing branch
-          const { error } = await supabase
-            .from('branches')
-            .update({
-              branch_number: row.branchNumber,
-              name: row.branchName,
-              address: row.address,
-              format: row.format
-            })
-            .eq('id', existingBranch.id);
-          
-          console.log('Update result:', { error });
-          branchId = existingBranch.id;
-        } else {
-          console.log('➕ Creating new branch');
-          // Create new branch
-          const { data: newBranch, error } = await supabase
-            .from('branches')
-            .insert({
-              branch_number: row.branchNumber,
-              name: row.branchName,
-              address: row.address,
-              format: row.format
-            })
-            .select()
-            .single();
-          
-          console.log('Insert result:', { newBranch, error });
-          if (!error && newBranch) {
-            branchId = newBranch.id;
+          if (checkError) {
+            console.error(`Error checking branch ${row.branchName}:`, checkError);
+            errorCount++;
+            continue;
           }
-        }
 
-        // Assign manager to branch
-        if (branchId && row.managerPhone && managerMap.has(row.managerPhone)) {
-          const managerId = managerMap.get(row.managerPhone);
+          let branchId;
           
-          console.log('🔗 Assigning manager to branch:', { managerId, branchId });
-          
-          try {
-            // Check if assignment exists
-            const { data: existingAssign, error: checkErr } = await supabase
-              .from('manager_branches')
-              .select('id')
-              .eq('manager_id', managerId)
-              .eq('branch_id', branchId)
-              .maybeSingle();
-
-            console.log('Assignment check:', { existingAssign, error: checkErr });
-
-            if (!existingAssign) {
-              const { data: newAssign, error: assignErr } = await supabase
-                .from('manager_branches')
-                .insert({
-                  manager_id: managerId,
-                  branch_id: branchId
-                })
-                .select();
-              
-              console.log('Assignment result:', { newAssign, error: assignErr });
+          if (existingBranch) {
+            console.log(`Updating existing branch: ${existingBranch.name}`);
+            
+            // Update existing branch
+            const { error: updateError } = await supabase
+              .from('branches')
+              .update({
+                branch_number: row.branchNumber,
+                name: row.branchName,
+                address: row.address,
+                format: row.format
+              })
+              .eq('id', existingBranch.id);
+            
+            if (updateError) {
+              console.error(`Error updating branch ${row.branchName}:`, updateError);
+              errorCount++;
+              continue;
             }
-          } catch (err) {
-            console.error('❌ Error assigning:', err);
+            
+            branchId = existingBranch.id;
+            console.log(`Branch updated successfully: ${branchId}`);
+          } else {
+            console.log(`Creating new branch: ${row.branchName}`);
+            
+            // Create new branch
+            const { data: newBranch, error: insertError } = await supabase
+              .from('branches')
+              .insert({
+                branch_number: row.branchNumber,
+                name: row.branchName,
+                address: row.address,
+                format: row.format
+              })
+              .select()
+              .single();
+            
+            if (insertError) {
+              console.error(`Error creating branch ${row.branchName}:`, insertError);
+              errorCount++;
+              continue;
+            }
+            
+            if (newBranch) {
+              branchId = newBranch.id;
+              console.log(`Branch created successfully: ${branchId}`);
+            }
           }
+
+          // Assign manager to branch
+          if (branchId && row.managerPhone && managerMap.has(row.managerPhone)) {
+            const managerId = managerMap.get(row.managerPhone);
+            
+            console.log(`Assigning manager ${managerId} to branch ${branchId}`);
+            
+            try {
+              // Check if assignment exists
+              const { data: existingAssign, error: checkErr } = await supabase
+                .from('manager_branches')
+                .select('id')
+                .eq('manager_id', managerId)
+                .eq('branch_id', branchId)
+                .maybeSingle();
+
+              if (checkErr) {
+                console.error(`Error checking assignment:`, checkErr);
+                errorCount++;
+                continue;
+              }
+
+              if (!existingAssign) {
+                const { data: newAssign, error: assignErr } = await supabase
+                  .from('manager_branches')
+                  .insert({
+                    manager_id: managerId,
+                    branch_id: branchId
+                  })
+                  .select();
+                
+                if (assignErr) {
+                  console.error(`Error creating assignment:`, assignErr);
+                  errorCount++;
+                  continue;
+                }
+                
+                console.log(`Assignment created successfully`);
+              } else {
+                console.log(`Assignment already exists`);
+              }
+            } catch (err) {
+              console.error(`Unexpected error assigning:`, err);
+              errorCount++;
+            }
+          } else {
+            console.log(`Skipping assignment: branchId=${branchId}, managerPhone=${row.managerPhone}, hasManager=${managerMap.has(row.managerPhone)}`);
+          }
+          
+          successCount++;
+          
+          // Small delay to prevent overwhelming the database
+          await new Promise(resolve => setTimeout(resolve, 150));
+          
+        } catch (err) {
+          console.error(`Unexpected error with branch ${row.branchName}:`, err);
+          errorCount++;
         }
       }
 
-      onMessage(`היובא בוצע בהצלחה: ${parsedData.length} סניפים`, true);
+      const message = `ייבוא הושלם: ${successCount} סניפים עודכנו בהצלחה${errorCount > 0 ? `, ${errorCount} שגיאות` : ''}`;
+      onMessage(message, errorCount === 0);
+      
       setParsedData([]);
       setFile(null);
       setStep('upload');
@@ -230,7 +343,7 @@ const ImportBranches = ({ onMessage, onImportComplete }) => {
       }
     } catch (error) {
       console.error('Import error:', error);
-      onMessage('שגיאה בייבוא הנתונים');
+      onMessage('שגיאה כללית בייבוא הנתונים');
     } finally {
       setLoading(false);
     }

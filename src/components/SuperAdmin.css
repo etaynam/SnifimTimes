@@ -138,21 +138,17 @@
   gap: 15px;
 }
 
-.form-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-  position: sticky;
-  bottom: 20px;
-  z-index: 100;
-}
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
 
-.form-actions .btn {
-  flex: 1;
-  font-size: 16px !important;
-  padding: 14px 20px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
+  .form-actions .btn {
+    flex: 1;
+    font-size: 16px !important;
+    padding: 14px 20px !important;
+  }
 
 .checkbox-label {
   display: flex;
@@ -184,7 +180,101 @@
   font-weight: 600;
 }
 
-@media (max-width: 768px) {
+/* Desktop Enhancements */
+@media (min-width: 1024px) {
+  .tabs {
+    gap: 12px;
+    margin-bottom: 30px;
+    padding: 8px;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .tab {
+    padding: 15px 30px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 10px;
+  }
+
+  .tab.active {
+    box-shadow: 0 4px 15px rgba(0, 146, 69, 0.3);
+  }
+
+  .item-card {
+    padding: 25px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .item-card h3 {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .item-card p {
+    font-size: 15px;
+    margin-bottom: 15px;
+    line-height: 1.5;
+  }
+
+  .icon-btn, .icon-btn-danger {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    font-size: 18px;
+  }
+
+  .form-card {
+    padding: 30px;
+    border-radius: 16px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  }
+
+  .form-row {
+    gap: 25px;
+    margin-bottom: 25px;
+  }
+
+  .form-actions {
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 2px solid #f0f0f0;
+  }
+
+  .form-actions .btn {
+    padding: 16px 32px !important;
+    font-size: 16px !important;
+    border-radius: 12px;
+  }
+
+  .hours-display {
+    gap: 30px;
+  }
+
+  .hours-display h4 {
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+
+  .hours-display p {
+    font-size: 18px;
+  }
+
+  .checkbox-label {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 1023px) {
   .tabs {
     flex-wrap: wrap;
   }
