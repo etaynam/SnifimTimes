@@ -262,6 +262,31 @@ const BranchCard = ({ branch, setError, setSuccess }) => {
 
       if (updateError) throw updateError;
 
+      // Trigger Make webhook with update details
+      const webhookData = {
+        event: 'branch_hours_updated',
+        branch_id: branch.id,
+        branch_name: branch.name,
+        branch_number: branch.branch_number,
+        hours: sanitizedHours,
+        updated_at: new Date().toISOString()
+      };
+
+      try {
+        await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/trigger-make-webhook`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify(webhookData)
+        });
+        console.log('Make webhook triggered successfully');
+      } catch (webhookError) {
+        console.error('Error triggering Make webhook:', webhookError);
+        // Don't fail the update if webhook fails
+      }
+
       setSuccess('השעות עודכנו בהצלחה');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
