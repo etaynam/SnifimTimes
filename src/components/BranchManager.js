@@ -273,7 +273,8 @@ const BranchCard = ({ branch, setError, setSuccess }) => {
       };
 
       try {
-        await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/trigger-make-webhook`, {
+        console.log('Triggering Make webhook with data:', webhookData);
+        const response = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/trigger-make-webhook`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -281,7 +282,13 @@ const BranchCard = ({ branch, setError, setSuccess }) => {
           },
           body: JSON.stringify(webhookData)
         });
-        console.log('Make webhook triggered successfully');
+        
+        const result = await response.json();
+        console.log('Make webhook response:', result);
+        
+        if (!response.ok) {
+          console.error('Webhook response not ok:', result);
+        }
       } catch (webhookError) {
         console.error('Error triggering Make webhook:', webhookError);
         // Don't fail the update if webhook fails
