@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// In-memory storage for OTP codes (in production, use a database or cache)
+const otpStore = new Map();
+
 serve(async (req) => {
   console.log('=== Verify OTP Edge Function called ===');
   console.log('Request method:', req.method);
@@ -41,12 +44,50 @@ serve(async (req) => {
       )
     }
 
-    const { phone, code, storedCode } = requestData || {};
+    const { phone, code } = requestData || {};
 
-    if (!phone || !code || !storedCode) {
+    if (!phone || !code) {
       return new Response(
         JSON.stringify({ success: false, error: 'Missing parameters' }),
         { headers: { 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    // Get stored OTP from server-side storage
+    const key = `${phone}_otp`;
+    const storedData = otpStore.get(key);
+    
+    if (!storedData) {
+      console.log('No stored OTP found for phone:', phone);
+      return new Response(
+        JSON.stringify({ success: false, error: 'קוד לא נמצא או פג תוקף' }),
+        { 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+          },
+          status: 400
+        }
+      )
+    }
+
+    // Check if OTP expired
+    if (new Date(storedData.expires_at) < new Date()) {
+      console.log('OTP expired for phone:', phone);
+      otpStore.delete(key);
+      return new Response(
+        JSON.stringify({ success: false, error: 'קוד פג תוקף' }),
+        { 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+          },
+          status: 400
+        }
       )
     }
 
@@ -60,9 +101,14 @@ serve(async (req) => {
       return result === 0
     }
 
-    const isValid = verifyOTP(code.toString(), storedCode.toString())
+    const isValid = verifyOTP(code.toString(), storedData.code.toString())
     
     console.log('OTP verification result:', isValid);
+    
+    // Remove OTP after verification attempt (one-time use)
+    if (isValid) {
+      otpStore.delete(key);
+    }
     
     return new Response(
       JSON.stringify({ success: isValid }),
@@ -91,3 +137,5 @@ serve(async (req) => {
   }
 })
 
+// Export the OTP store so generate-otp can use it
+export { otpStore };

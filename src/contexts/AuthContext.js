@@ -103,12 +103,13 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: 'Failed to generate OTP' };
       }
 
-      // Store OTP securely in session storage
-      sessionStorage.setItem('otp_code', data.code);
+      // SECURITY FIX: Do not store code from response (it's no longer sent)
+      // The code is sent only via SMS, not returned in the response
+      // The user must enter the code they receive via SMS
+      
+      // Store phone for verification
       sessionStorage.setItem('otp_phone', phone);
-      sessionStorage.setItem('otp_expires', data.expires_at);
-
-      // Security: OTP generated and stored securely
+      sessionStorage.setItem('otp_expires', new Date(Date.now() + 5 * 60 * 1000).toISOString());
       
       return { success: true, data };
     } catch (error) {
@@ -148,8 +149,8 @@ export const AuthProvider = ({ children }) => {
         return { success: true, data: { user, session: { demo: true, masterCode: true } } };
       }
       
-      // Security: Get stored OTP from session storage
-      const storedCode = sessionStorage.getItem('otp_code');
+      // SECURITY FIX: No longer store code in sessionStorage
+      // The verification happens server-side via Edge Function
       const storedPhone = sessionStorage.getItem('otp_phone');
       const expiresAt = sessionStorage.getItem('otp_expires');
 
@@ -160,13 +161,12 @@ export const AuthProvider = ({ children }) => {
 
       // Security: Check expiration
       if (!expiresAt || new Date(expiresAt) < new Date()) {
-        sessionStorage.removeItem('otp_code');
         sessionStorage.removeItem('otp_phone');
         sessionStorage.removeItem('otp_expires');
         return { success: false, error: 'קוד פג תוקף' };
       }
 
-      // Call edge function to verify OTP
+      // Call edge function to verify OTP server-side
       const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
       const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
       
@@ -176,7 +176,7 @@ export const AuthProvider = ({ children }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${supabaseAnonKey}`
         },
-        body: JSON.stringify({ phone: cleanPhone, code: token, storedCode })
+        body: JSON.stringify({ phone: cleanPhone, code: token })
       });
 
       const data = await response.json();
@@ -186,7 +186,6 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Security: Clear OTP from storage after successful verification
-      sessionStorage.removeItem('otp_code');
       sessionStorage.removeItem('otp_phone');
       sessionStorage.removeItem('otp_expires');
 

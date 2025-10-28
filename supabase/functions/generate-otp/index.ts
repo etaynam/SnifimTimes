@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
+// Import OTP store from verify-otp
+const { otpStore } = await import('../verify-otp/index.ts');
+
 serve(async (req) => {
   console.log('=== Edge Function called ===');
   console.log('Request method:', req.method);
@@ -55,6 +58,15 @@ serve(async (req) => {
     const code = Math.floor(1000 + Math.random() * 9000).toString()
     console.log('Generated code:', code);
     
+    // SECURITY FIX: Store code server-side, NOT in response
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
+    otpStore.set(`${phone}_otp`, {
+      code: code,
+      phone: phone,
+      expires_at: expiresAt
+    });
+    console.log('OTP stored server-side for phone:', phone);
+    
     // Get SMS credentials
     const smsUser = Deno.env.get('SMS_USER');
     const smsPass = Deno.env.get('SMS_PASS');
@@ -100,12 +112,14 @@ serve(async (req) => {
       // In production, you might want to fail here
     }
     
+    // SECURITY FIX: Store the code server-side and return only success status
+    // DO NOT expose the code in the response
     const responseData = {
       success: true,
-      code: code,
-      expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 minutes
+      message: 'Code sent successfully'
     };
-    console.log('Returning response:', responseData);
+    
+    console.log('Returning response (WITHOUT CODE):', responseData);
     
     return new Response(
       JSON.stringify(responseData),
