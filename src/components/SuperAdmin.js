@@ -167,6 +167,44 @@ const BranchesTab = ({ branches, onUpdate, onMessage }) => {
         .update(branchData)
         .eq('id', id);
       if (error) throw error;
+
+      // Trigger Make webhook if hours were updated
+      if (branchData.hours) {
+        const branch = branches.find(b => b.id === id);
+        if (branch) {
+          const webhookData = {
+            event: 'branch_hours_updated',
+            branch_id: id,
+            branch_name: branch.name,
+            branch_number: branch.branch_number,
+            hours: branchData.hours,
+            updated_at: new Date().toISOString()
+          };
+
+          try {
+            console.log('Triggering Make webhook from SuperAdmin with data:', webhookData);
+            const response = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/trigger-make-webhook`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`
+              },
+              body: JSON.stringify(webhookData)
+            });
+            
+            const result = await response.json();
+            console.log('Make webhook response from SuperAdmin:', result);
+            
+            if (!response.ok) {
+              console.error('Webhook response not ok:', result);
+            }
+          } catch (webhookError) {
+            console.error('Error triggering Make webhook from SuperAdmin:', webhookError);
+            // Don't fail the update if webhook fails
+          }
+        }
+      }
+
       onMessage('הסניף עודכן בהצלחה', true);
       setEditingBranch(null);
       onUpdate();

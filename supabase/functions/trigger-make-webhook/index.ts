@@ -23,20 +23,31 @@ serve(async (req) => {
     
     console.log('Data received:', requestData);
     
-    // Forward to Make webhook
+    // Forward to Make webhook with API key
+    const makeApiKey = Deno.env.get('MAKE_API_KEY');
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-make-apikey': makeApiKey || ''
       },
       body: JSON.stringify(requestData)
     });
     
-    const result = await response.json();
-    console.log('Make response:', result);
+    // Handle both text and JSON responses
+    const responseText = await response.text();
+    console.log('Make response status:', response.status);
+    console.log('Make response text:', responseText);
+    
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      result = { text: responseText };
+    }
     
     return new Response(
-      JSON.stringify({ success: true, result }),
+      JSON.stringify({ success: response.ok, result, status: response.status }),
       { 
         headers: { 
           'Content-Type': 'application/json',
