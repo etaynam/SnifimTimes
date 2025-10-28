@@ -29,20 +29,26 @@ jobs:
         REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
         REACT_APP_MASTER_CODE: ${{ secrets.REACT_APP_MASTER_CODE }}
         
-    - name: Deploy to UPress
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+    - name: Create deployment package
+      run: |
+        cd build
+        zip -r ../deployment.zip .
+        cd ..
+    
+    - name: Show deployment info
+      run: |
+        echo "📦 Deployment package created: deployment.zip"
+        echo "📁 Size: $(du -h deployment.zip | cut -f1)"
+        echo ""
+        echo "⚠️  FTP connection timeout - manual upload required"
+        echo ""
+        echo "📋 Next steps:"
+        echo "1. Download deployment.zip from artifacts"
+        echo "2. Upload to UPress via control panel"
+        echo "3. Extract files to root directory"
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
       with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        protocol: ftp
-        port: 21
-        local-dir: ./build/
-        server-dir: /
-        log-level: verbose
-        dry-run: false
-        exclude: |
-          **/.git*
-          **/.git*/**
-          **/node_modules/**
-          **/.env
+        name: deployment-package
+        path: deployment.zip
