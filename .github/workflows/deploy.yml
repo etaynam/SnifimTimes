@@ -35,12 +35,12 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
-        protocol: ftps
+        protocol: ftp
         port: 21
-        timeout: 300000
         local-dir: ./build/
         server-dir: /
         log-level: verbose
+        dry-run: false
         exclude: |
           **/.git*
           **/.git*/**
