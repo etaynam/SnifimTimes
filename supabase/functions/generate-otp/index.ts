@@ -1,10 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-
-// Import OTP store from verify-otp
-const { otpStore } = await import('../verify-otp/index.ts');
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 serve(async (req) => {
-  console.log('=== Edge Function called ===');
+  console.log('=== Generate OTP Edge Function called ===');
   console.log('Request method:', req.method);
   
   try {
@@ -58,14 +56,32 @@ serve(async (req) => {
     const code = Math.floor(1000 + Math.random() * 9000).toString()
     console.log('Generated code:', code);
     
-    // SECURITY FIX: Store code server-side, NOT in response
+    // SECURITY FIX: Store code in Supabase database
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
-    otpStore.set(`${phone}_otp`, {
-      code: code,
-      phone: phone,
-      expires_at: expiresAt
-    });
-    console.log('OTP stored server-side for phone:', phone);
+    
+    // Store OTP in database
+    const { error: storeError } = await supabase
+      .from('otp_codes')
+      .insert({
+        phone: phone,
+        code: code,
+        expires_at: expiresAt,
+        created_at: new Date().toISOString()
+      });
+    
+    if (storeError) {
+      console.error('Error storing OTP:', storeError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Failed to store OTP' }),
+        { headers: { 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+    
+    console.log('OTP stored in database for phone:', phone);
     
     // Get SMS credentials
     const smsUser = Deno.env.get('SMS_USER');
@@ -147,4 +163,3 @@ serve(async (req) => {
     )
   }
 })
-

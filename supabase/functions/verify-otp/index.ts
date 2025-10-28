@@ -1,9 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// In-memory storage for OTP codes (in production, use a database or cache)
-const otpStore = new Map();
-
 serve(async (req) => {
   console.log('=== Verify OTP Edge Function called ===');
   console.log('Request method:', req.method);
@@ -53,14 +50,25 @@ serve(async (req) => {
       )
     }
 
-    // Get stored OTP from server-side storage
-    const key = `${phone}_otp`;
-    const storedData = otpStore.get(key);
+    // Get stored OTP from Supabase database
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    if (!storedData) {
-      console.log('No stored OTP found for phone:', phone);
+    const { data: storedData, error: fetchError } = await supabase
+      .from('otp_codes')
+      .select('*')
+      .eq('phone', phone)
+      .eq('code', code)
+      .gte('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    if (fetchError) {
+      console.error('Error fetching OTP:', fetchError);
       return new Response(
-        JSON.stringify({ success: false, error: 'קוד לא נמצא או פג תוקף' }),
+        JSON.stringify({ success: false, error: 'Database error' }),
         { 
           headers: { 
             'Content-Type': 'application/json',
@@ -68,17 +76,15 @@ serve(async (req) => {
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization'
           },
-          status: 400
+          status: 500
         }
       )
     }
-
-    // Check if OTP expired
-    if (new Date(storedData.expires_at) < new Date()) {
-      console.log('OTP expired for phone:', phone);
-      otpStore.delete(key);
+    
+    if (!storedData) {
+      console.log('No valid OTP found for phone:', phone);
       return new Response(
-        JSON.stringify({ success: false, error: 'קוד פג תוקף' }),
+        JSON.stringify({ success: false, error: 'קוד לא נמצא או פג תוקף' }),
         { 
           headers: { 
             'Content-Type': 'application/json',
@@ -107,7 +113,11 @@ serve(async (req) => {
     
     // Remove OTP after verification attempt (one-time use)
     if (isValid) {
-      otpStore.delete(key);
+      await supabase
+        .from('otp_codes')
+        .delete()
+        .eq('id', storedData.id);
+      console.log('OTP deleted after successful verification');
     }
     
     return new Response(
@@ -136,6 +146,3 @@ serve(async (req) => {
     )
   }
 })
-
-// Export the OTP store so generate-otp can use it
-export { otpStore };
