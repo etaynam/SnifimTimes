@@ -801,6 +801,7 @@ const ManagerForm = ({ onSave, onCancel }) => {
   );
 };
 
+// eslint-disable-next-line no-unused-vars
 const AssignmentsTab = ({ onUpdate, onMessage }) => {
   const [managers, setManagers] = useState([]);
   const [branches, setBranches] = useState([]);

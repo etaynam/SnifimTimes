@@ -136,7 +136,7 @@ const Login = () => {
     // Format as 05X-XXXXXXX
     if (value.length > 0) {
       if (value.length <= 3) {
-        value = value;
+        // value = value; // No change needed
       } else if (value.length <= 7) {
         value = value.substring(0, 3) + '-' + value.substring(3);
       } else {

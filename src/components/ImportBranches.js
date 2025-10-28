@@ -293,7 +293,7 @@ const ImportBranches = ({ onMessage, onImportComplete }) => {
               }
 
               if (!existingAssign) {
-                const { data: newAssign, error: assignErr } = await supabase
+                const { error: assignErr } = await supabase
                   .from('manager_branches')
                   .insert({
                     manager_id: managerId,
@@ -349,7 +349,7 @@ const ImportBranches = ({ onMessage, onImportComplete }) => {
     }
   };
 
-  const formats = ['מחסני השוק', 'מחסני השוק מהדרין', 'מחסני השוק בשבילך', 'מחסני השוק בסיטי', 'קואופ שופ'];
+  // const formats = ['מחסני השוק', 'מחסני השוק מהדרין', 'מחסני השוק בשבילך', 'מחסני השוק בסיטי', 'קואופ שופ'];
 
   if (step === 'review') {
     return (
