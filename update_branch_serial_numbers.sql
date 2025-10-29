@@ -61,14 +61,13 @@ UPDATE public.branches SET serial_number = '662' WHERE branch_number = '261';
 UPDATE public.branches SET serial_number = '663' WHERE branch_number = '262';
 UPDATE public.branches SET serial_number = '654' WHERE branch_number = '263';
 UPDATE public.branches SET serial_number = '652' WHERE branch_number = '264';
-UPDATE public.branches SET serial_number = '653' WHERE branch_number = '265';
+UPDATE public.branches SET serial_number = '0' WHERE branch_number = '265';
 UPDATE public.branches SET serial_number = '664' WHERE branch_number = '267';
 UPDATE public.branches SET serial_number = '665' WHERE branch_number = '268';
 UPDATE public.branches SET serial_number = '646' WHERE branch_number = '274';
 UPDATE public.branches SET serial_number = '629' WHERE branch_number = '277';
 UPDATE public.branches SET serial_number = '666' WHERE branch_number = '289';
 UPDATE public.branches SET serial_number = '656' WHERE branch_number = '290';
-UPDATE public.branches SET serial_number = '0' WHERE branch_number = '265';
 
 -- Verify the updates
 SELECT branch_name, branch_number, serial_number 

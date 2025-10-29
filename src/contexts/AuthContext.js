@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
       async (event, session) => {
         if (session) {
           setUser(session.user);
-          checkAdminRole(session.user.id);
+          await checkAdminRole(session.user);
         } else {
           setUser(null);
           setIsAdmin(false);
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setUser(session.user);
-        await checkAdminRole(session.user.id);
+        await checkAdminRole(session.user);
       }
     } catch (error) {
       // Error handled silently
@@ -52,34 +52,46 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const checkAdminRole = async (userId) => {
-    // Check if phone is the admin phone
-    if (userId && userId.toString().includes('demo')) {
-      const adminPhones = ['0542323965', '0523693649', '0542323903'];
-      // Remove all dashes from userId for comparison
-      const cleanUserId = userId.replace(/-/g, '');
-      const isDemoAdmin = adminPhones.some(phone => cleanUserId.includes(phone));
-      setIsAdmin(isDemoAdmin);
-      return;
-    }
-
-    /* REAL SUPABASE CODE - Uncomment when ready:
+  const checkAdminRole = async (userIdOrUser) => {
     try {
-      const { data } = await supabase
+      // Extract phone from userId or user object
+      let phone = null;
+      
+      if (typeof userIdOrUser === 'string' && userIdOrUser.includes('demo-')) {
+        phone = userIdOrUser.replace('demo-', '');
+      } else if (userIdOrUser?.phone) {
+        phone = userIdOrUser.phone.replace(/[^0-9]/g, '');
+      } else if (user?.phone) {
+        phone = user.phone.replace(/[^0-9]/g, '');
+      }
+
+      if (!phone) {
+        setIsAdmin(false);
+        return;
+      }
+
+      // Check managers table for is_admin status
+      const { data: manager, error } = await supabase
         .from('managers')
         .select('is_admin')
-        .eq('user_id', userId)
-        .single();
+        .eq('phone', phone)
+        .maybeSingle();
 
-      if (data && data.is_admin) {
+      if (error) {
+        console.error('Error checking admin role:', error);
+        setIsAdmin(false);
+        return;
+      }
+
+      if (manager && manager.is_admin === true) {
         setIsAdmin(true);
       } else {
         setIsAdmin(false);
       }
     } catch (error) {
+      console.error('Error in checkAdminRole:', error);
       setIsAdmin(false);
     }
-    */
   };
 
   const signInWithPhone = async (phone) => {
@@ -137,16 +149,16 @@ export const AuthProvider = ({ children }) => {
         }
 
         // Create user session with master code
-        const user = {
+        const userObj = {
           id: `demo-${cleanPhone}`,
           phone: cleanPhone,
           created_at: new Date().toISOString()
         };
         
-        setUser(user);
-        await checkAdminRole(user.id);
+        setUser(userObj);
+        await checkAdminRole(userObj);
         
-        return { success: true, data: { user, session: { demo: true, masterCode: true } } };
+        return { success: true, data: { user: userObj, session: { demo: true, masterCode: true } } };
       }
       
       // SECURITY FIX: No longer store code in sessionStorage
@@ -190,16 +202,16 @@ export const AuthProvider = ({ children }) => {
       sessionStorage.removeItem('otp_expires');
 
       // Create user session
-      const user = {
+      const userObj = {
         id: `demo-${cleanPhone}`,
         phone: cleanPhone,
         created_at: new Date().toISOString()
       };
       
-      setUser(user);
-      await checkAdminRole(user.id);
+      setUser(userObj);
+      await checkAdminRole(userObj);
       
-      return { success: true, data: { user, session: { demo: true } } };
+      return { success: true, data: { user: userObj, session: { demo: true } } };
     } catch (error) {
       return { success: false, error: 'קוד לא תקין' };
     }

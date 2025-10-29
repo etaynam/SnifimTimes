@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import BranchManager from './components/BranchManager';
 import SuperAdmin from './components/SuperAdmin';
+import BranchList from './components/BranchList';
 import './App.css';
 
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
@@ -43,6 +44,8 @@ const AppRoutes = () => {
 
   return (
     <Routes>
+      <Route path="/" element={<BranchList />} /> {/* Main public route - branch list */}
+      <Route path="/branches" element={<BranchList />} /> {/* Alternative route to branch list */}
       <Route
         path="/login"
         element={!user ? <Login /> : <Navigate to={isAdmin ? '/admin' : '/manager'} replace />}
@@ -50,9 +53,17 @@ const AppRoutes = () => {
       <Route
         path="/manager"
         element={
-          <ProtectedRoute>
-            <BranchManager />
-          </ProtectedRoute>
+          !user ? (
+            <Login />
+          ) : isAdmin ? (
+            <ProtectedRoute>
+              <SuperAdmin />
+            </ProtectedRoute>
+          ) : (
+            <ProtectedRoute>
+              <BranchManager />
+            </ProtectedRoute>
+          )
         }
       />
       <Route
@@ -63,7 +74,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route path="/" element={<Navigate to={user ? (isAdmin ? '/admin' : '/manager') : '/login'} replace />} />
     </Routes>
   );
 };
