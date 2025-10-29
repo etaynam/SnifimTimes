@@ -177,6 +177,7 @@ const BranchesTab = ({ branches, onUpdate, onMessage }) => {
             branch_id: id,
             branch_name: branch.name,
             branch_number: branch.branch_number,
+            serial_number: branch.serial_number,
             hours: branchData.hours,
             updated_at: new Date().toISOString()
           };

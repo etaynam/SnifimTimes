@@ -268,6 +268,7 @@ const BranchCard = ({ branch, setError, setSuccess }) => {
         branch_id: branch.id,
         branch_name: branch.name,
         branch_number: branch.branch_number,
+        serial_number: branch.serial_number,
         hours: sanitizedHours,
         updated_at: new Date().toISOString()
       };
