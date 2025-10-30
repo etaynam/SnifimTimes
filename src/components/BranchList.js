@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../config/supabase';
 import { FaMapMarkerAlt, FaBuilding, FaSearch, FaTimes, FaSun, FaPhone } from 'react-icons/fa';
+import Header from './Header';
 import './BranchList.css';
 
 const BranchList = () => {
@@ -18,9 +20,19 @@ const BranchList = () => {
   const [hasMore, setHasMore] = useState(true);
   const [globalMessages, setGlobalMessages] = useState([]);
   const [displayPeriod, setDisplayPeriod] = useState('auto'); // 'auto', 'summer', or 'winter'
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedBranchForReport, setSelectedBranchForReport] = useState(null);
   
   const observerTarget = useRef(null);
   const ITEMS_PER_LOAD = 10;
+
+  // Generate slug for branch URL
+  const generateSlug = (branch) => {
+    if (!branch) return '';
+    if (branch.serial_number) return branch.serial_number;
+    // Create slug from ID as fallback
+    return branch.id;
+  };
 
   // Fetch all branches on mount and set up real-time subscription
   useEffect(() => {
@@ -334,16 +346,8 @@ const BranchList = () => {
       sat: 'שבת'
     };
     
-    // Helper function to parse time string to minutes for comparison
-    const parseTimeToMinutes = (timeStr) => {
-      if (!timeStr) return 0;
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      return (hours || 0) * 100 + (minutes || 0);
-    };
-    
     const todayIndex = now.getDay(); // 0 = Sunday
     const todayDay = days[todayIndex];
-    const currentTime = now.getHours() * 100 + now.getMinutes(); // HHMM format for comparison
     
     const hoursList = [];
     
@@ -359,13 +363,6 @@ const BranchList = () => {
         let isOpen = false;
         let minutesUntilClose = null;
         
-        // Helper function to convert HHMM format to minutes since midnight
-        const timeToMinutes = (timeValue) => {
-          const hours = Math.floor(timeValue / 100);
-          const minutes = timeValue % 100;
-          return hours * 60 + minutes;
-        };
-        
         // Handle Saturday specially
         if (day === 'sat') {
           if (dayHours.openSaturday === false) {
@@ -379,18 +376,26 @@ const BranchList = () => {
             if (open && close) {
               displayText = `${open} - ${close}`;
               if (isToday) {
-                const openTime = parseTimeToMinutes(open);
-                const closeTime = parseTimeToMinutes(close);
-                isOpen = currentTime >= openTime && currentTime <= closeTime;
+                // Use Date objects for accurate time comparison (handles next-day closing)
+                const now = new Date();
+                const [openHour, openMin] = open.split(':').map(Number);
+                const [closeHour, closeMin] = close.split(':').map(Number);
+                const openDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), openHour, openMin);
+                let closeDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), closeHour, closeMin);
+                
+                // If close time is earlier than open time, assume it closes the next day
+                if (closeDate < openDate) {
+                  closeDate = new Date(closeDate.getTime() + 24 * 60 * 60 * 1000);
+                }
+                
+                isOpen = now >= openDate && now < closeDate;
                 
                 if (isOpen) {
-                  const currentMinutes = timeToMinutes(currentTime);
-                  const closeMinutes = timeToMinutes(closeTime);
-                  const minutesLeft = closeMinutes - currentMinutes;
+                  const totalMinutes = Math.floor((closeDate - now) / (1000 * 60));
                   
                   // Show message if less than 60 minutes remain AND branch is open
-                  if (minutesLeft > 0 && minutesLeft <= 60) {
-                    minutesUntilClose = minutesLeft;
+                  if (totalMinutes > 0 && totalMinutes <= 60) {
+                    minutesUntilClose = totalMinutes;
                   } else {
                     minutesUntilClose = null;
                   }
@@ -411,18 +416,26 @@ const BranchList = () => {
             if (open && close) {
               displayText = `${open} - ${close}`;
               if (isToday) {
-                const openTime = parseTimeToMinutes(open);
-                const closeTime = parseTimeToMinutes(close);
-                isOpen = currentTime >= openTime && currentTime <= closeTime;
+                // Use Date objects for accurate time comparison (handles next-day closing)
+                const now = new Date();
+                const [openHour, openMin] = open.split(':').map(Number);
+                const [closeHour, closeMin] = close.split(':').map(Number);
+                const openDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), openHour, openMin);
+                let closeDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), closeHour, closeMin);
+                
+                // If close time is earlier than open time, assume it closes the next day
+                if (closeDate < openDate) {
+                  closeDate = new Date(closeDate.getTime() + 24 * 60 * 60 * 1000);
+                }
+                
+                isOpen = now >= openDate && now < closeDate;
                 
                 if (isOpen) {
-                  const currentMinutes = timeToMinutes(currentTime);
-                  const closeMinutes = timeToMinutes(closeTime);
-                  const minutesLeft = closeMinutes - currentMinutes;
+                  const totalMinutes = Math.floor((closeDate - now) / (1000 * 60));
                   
                   // Show message if less than 60 minutes remain AND branch is open
-                  if (minutesLeft > 0 && minutesLeft <= 60) {
-                    minutesUntilClose = minutesLeft;
+                  if (totalMinutes > 0 && totalMinutes <= 60) {
+                    minutesUntilClose = totalMinutes;
                   } else {
                     minutesUntilClose = null;
                   }
@@ -443,18 +456,26 @@ const BranchList = () => {
           if (open && close) {
             displayText = `${open} - ${close}`;
             if (isToday) {
-              const openTime = parseTimeToMinutes(open);
-              const closeTime = parseTimeToMinutes(close);
-              isOpen = currentTime >= openTime && currentTime <= closeTime;
+              // Use Date objects for accurate time comparison (handles next-day closing)
+              const now = new Date();
+              const [openHour, openMin] = open.split(':').map(Number);
+              const [closeHour, closeMin] = close.split(':').map(Number);
+              const openDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), openHour, openMin);
+              let closeDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), closeHour, closeMin);
               
-              if (isOpen) {
-                const currentMinutes = timeToMinutes(currentTime);
-                const closeMinutes = timeToMinutes(closeTime);
-                const minutesLeft = closeMinutes - currentMinutes;
-                
-                // Show message if less than 60 minutes remain AND branch is open
-                if (minutesLeft > 0 && minutesLeft <= 60) {
-                  minutesUntilClose = minutesLeft;
+              // If close time is earlier than open time, assume it closes the next day
+              if (closeDate < openDate) {
+                closeDate = new Date(closeDate.getTime() + 24 * 60 * 60 * 1000);
+              }
+              
+              isOpen = now >= openDate && now < closeDate;
+              
+                if (isOpen) {
+                  const totalMinutes = Math.floor((closeDate - now) / (1000 * 60));
+                  
+                  // Show message if less than 60 minutes remain AND branch is open
+                if (totalMinutes > 0 && totalMinutes <= 60) {
+                  minutesUntilClose = totalMinutes;
                 } else {
                   minutesUntilClose = null;
                 }
@@ -489,6 +510,42 @@ const BranchList = () => {
     };
   };
 
+  // Track navigation click
+  const trackNavigationClick = async (branch) => {
+    try {
+      await supabase
+        .from('navigation_clicks')
+        .insert({
+          branch_id: branch.id,
+          branch_name: branch.name,
+          user_agent: navigator.userAgent,
+          // Note: We don't track IP on client side for privacy, only if needed on server
+        });
+    } catch (error) {
+      // Silently fail - don't interrupt user experience
+      console.error('Error tracking navigation click:', error);
+    }
+  };
+
+  const handleWazeClick = (e, branch) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Track the click
+    trackNavigationClick(branch);
+    
+    // Navigate to Waze
+    const fullAddress = `${branch.address}${branch.city ? ', ' + branch.city : ''}`;
+    const encodedAddress = encodeURIComponent(fullAddress);
+    // Try native app first (mobile), fallback to web
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      window.location.href = `waze://?q=${encodedAddress}&navigate=yes`;
+    } else {
+      window.open(`https://waze.com/ul?q=${encodedAddress}&navigate=yes`, '_blank');
+    }
+  };
+
   if (loading) {
     return (
       <div className="branch-list-loading">
@@ -499,7 +556,9 @@ const BranchList = () => {
   }
 
   return (
-    <div className="branch-list-container">
+    <>
+      <Header />
+      <div className="branch-list-container">
             {/* Global Messages */}
             {globalMessages.length > 0 && (
               <div className="global-messages-container">
@@ -594,7 +653,9 @@ const BranchList = () => {
               <div key={branch.id} className="branch-card">
                 <div className="branch-card-header">
                   <div className="branch-name-wrapper">
-                    <h3 className="branch-name">{branch.name}</h3>
+                    <Link to={`/branch/${generateSlug(branch)}`} className="branch-name-link">
+                      <h3 className="branch-name">{branch.name}</h3>
+                    </Link>
                     {branch.format && (
                       <span className="branch-format">{branch.format}</span>
                     )}
@@ -605,29 +666,30 @@ const BranchList = () => {
                             <span>{branch.address}</span>
                           </div>
                         )}
-                        {branch.phone && (
-                          <div className="branch-phone">
-                            <FaPhone className="phone-icon" />
-                            <span>{branch.phone}</span>
+                        {(branch.phone || branch.city) && (
+                          <div className="branch-phone-city">
+                            {branch.phone && (
+                              <>
+                                <FaPhone className="phone-icon" />
+                                <span>{branch.phone}</span>
+                              </>
+                            )}
+                            {branch.phone && branch.city && (
+                              <span className="phone-city-separator">|</span>
+                            )}
+                            {branch.city && (
+                              <span className="branch-city">{branch.city}</span>
+                            )}
                           </div>
                         )}
                 </div>
                 
                 <div className="branch-card-body">
-                  {branch.city && (
-                    <div className="branch-info">
-                      <span className="branch-city">{branch.city}</span>
-                    </div>
-                  )}
                   
                   {branch.hours && formatHoursDisplay(branch.hours) && (() => {
                     const hoursData = formatHoursDisplay(branch.hours);
                     return (
                       <div className="branch-hours-section">
-                        <div className="branch-hours-header">
-                          <span className="period-icon">{hoursData.icon}</span>
-                          <span className="period-name">{hoursData.periodName}</span>
-                        </div>
                         <div className="branch-hours-list">
                           {hoursData.days.map((dayInfo, idx) => (
                             <div 
@@ -677,9 +739,45 @@ const BranchList = () => {
                           );
                         })()}
                       </div>
+                      
+                      {/* Waze Navigation Button - at bottom of card */}
+                      {branch.address && (
+                        <button
+                          className="waze-navigate-btn-bottom"
+                          onClick={(e) => handleWazeClick(e, branch)}
+                          title="סע לשם עם Waze"
+                        >
+                          <img src="/images/waze-icon.png" alt="Waze" className="waze-icon-img" />
+                          <span>ניווט לסניף</span>
+                        </button>
+                      )}
+                      
+                      {/* Report Error Link */}
+                      <button
+                        className="report-error-link"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedBranchForReport(branch);
+                          setShowReportModal(true);
+                        }}
+                      >
+                        מצאת טעות בשעות שלנו? דווחו לנו.
+                      </button>
                     </div>
                   ))}
                 </div>
+
+          {/* Report Modal */}
+          {showReportModal && selectedBranchForReport && (
+            <ReportModal
+              branch={selectedBranchForReport}
+              onClose={() => {
+                setShowReportModal(false);
+                setSelectedBranchForReport(null);
+              }}
+            />
+          )}
 
           {/* Infinite Scroll Trigger */}
           <div ref={observerTarget} className="scroll-trigger">
@@ -705,6 +803,153 @@ const BranchList = () => {
           )}
         </div>
       )}
+    </div>
+    </>
+  );
+};
+
+// Report Modal Component
+const ReportModal = ({ branch, onClose }) => {
+  const [selectedDays, setSelectedDays] = useState([]);
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [showThankYou, setShowThankYou] = useState(false);
+  
+  const dayNames = {
+    sun: 'ראשון',
+    mon: 'שני',
+    tue: 'שלישי',
+    wed: 'רביעי',
+    thu: 'חמישי',
+    fri: 'שישי',
+    sat: 'שבת'
+  };
+  
+  const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  const MAX_MESSAGE_LENGTH = 200;
+
+  const toggleDay = (day) => {
+    if (selectedDays.includes(day)) {
+      setSelectedDays(selectedDays.filter(d => d !== day));
+    } else {
+      setSelectedDays([...selectedDays, day]);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (selectedDays.length === 0) {
+      alert('אנא בחר לפחות יום אחד');
+      return;
+    }
+    
+    if (!message.trim()) {
+      alert('אנא הזן תיאור של הטעות');
+      return;
+    }
+
+    setSending(true);
+    
+    try {
+      const { error } = await supabase
+        .from('branch_reports')
+        .insert({
+          branch_id: branch.id,
+          branch_name: branch.name,
+          days: selectedDays,
+          message: message.trim()
+        });
+
+      if (error) throw error;
+      
+      setShowThankYou(true);
+    } catch (err) {
+      console.error('Error submitting report:', err);
+      alert('שגיאה בשליחת הדיווח. נסה שוב מאוחר יותר.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (showThankYou) {
+    return (
+      <div className="report-modal-overlay" onClick={onClose}>
+        <div className="report-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="report-thank-you">
+            <div className="thank-you-icon">✓</div>
+            <h2>תודה על הדיווח!</h2>
+            <p>הדיווח שלך התקבל וניבדק בקרוב.</p>
+            <button className="btn" onClick={onClose} style={{ marginTop: '20px' }}>
+              סגור
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="report-modal-overlay" onClick={onClose}>
+      <div className="report-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="report-modal-header">
+          <h2>דיווח על טעות בשעות</h2>
+          <button className="modal-close-btn" onClick={onClose} title="סגור">
+            <FaTimes />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="report-form">
+          <div className="report-branch-name">
+            <strong>סניף:</strong> {branch.name}
+          </div>
+
+          <div className="report-days-selection">
+            <label className="report-label">בחר ימים בהם הטעות קיימת:</label>
+            <div className="days-checkboxes">
+              {days.map(day => (
+                <label key={day} className="day-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={selectedDays.includes(day)}
+                    onChange={() => toggleDay(day)}
+                    style={{ width: '20px', height: '20px', accentColor: '#009245', cursor: 'pointer', marginLeft: '8px' }}
+                  />
+                  <span>{dayNames[day]}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="report-message-section">
+            <label className="report-label">
+              תאר את הטעות:
+              <span className="char-count">({message.length}/{MAX_MESSAGE_LENGTH})</span>
+            </label>
+            <textarea
+              value={message}
+              onChange={(e) => {
+                if (e.target.value.length <= MAX_MESSAGE_LENGTH) {
+                  setMessage(e.target.value);
+                }
+              }}
+              placeholder="לדוגמה: שעות הפתיחה המוצגות שגויות, הסניף פתוח בשעות אחרות..."
+              rows={4}
+              className="report-textarea"
+              required
+            />
+          </div>
+
+          <div className="report-form-actions">
+            <button type="submit" className="btn" disabled={sending}>
+              {sending ? 'שולח...' : 'שלח דיווח'}
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={sending}>
+              ביטול
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

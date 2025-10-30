@@ -1,3 +1,19 @@
-# https://www.robotstxt.org/robotstxt.html
+# Robots.txt for m-shuk.net branches subdomain
+# This file tells search engines how to crawl our site
+
 User-agent: *
-Disallow:
+Allow: /
+
+# Sitemap location
+Sitemap: https://snfm.m-shuk.net/sitemap.xml
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /login/
+Disallow: /super-admin/
+
+# Allow all branch pages
+Allow: /branch/
+
+# Crawl delay (optional)
+Crawl-delay: 1

@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../config/supabase';
 import ImportBranches from './ImportBranches';
 import Footer from './Footer';
+import SitemapGenerator from './SitemapGenerator';
 import { 
   FaEdit, 
   FaTrash, 
@@ -18,7 +19,14 @@ import {
   FaCog,
   FaSignOutAlt,
   FaBars,
-  FaTimes as FaTimesIcon
+  FaTable,
+  FaMapMarkerAlt,
+  FaPhone,
+  FaExclamationTriangle,
+  FaTimes as FaTimesIcon,
+  FaChartBar,
+  FaEdit as FaEditIcon,
+  FaSearch
 } from 'react-icons/fa';
 import './SuperAdmin.css';
 
@@ -83,8 +91,12 @@ const SuperAdmin = () => {
     { id: 'branches', label: 'ניהול סניפים', icon: FaBuilding },
     { id: 'managers', label: 'ניהול מנהלים', icon: FaUsers },
     { id: 'view', label: 'צפייה בשעות', icon: FaClock },
+    { id: 'bulk-hours', label: 'עריכת שעות המונית', icon: FaEditIcon },
     { id: 'import', label: 'ייבוא CSV', icon: FaFileUpload },
     { id: 'messages', label: 'הודעות', icon: FaEnvelope },
+    { id: 'reports', label: 'דיווחים', icon: FaExclamationTriangle },
+    { id: 'statistics', label: 'סטטיסטיקות', icon: FaChartBar },
+    { id: 'seo', label: 'SEO & Sitemap', icon: FaSearch },
     { id: 'settings', label: 'הגדרות', icon: FaCog }
   ];
 
@@ -166,8 +178,12 @@ const SuperAdmin = () => {
             <ManagersTab managers={managers} branches={branches} onUpdate={fetchData} onMessage={showMessage} />
           )}
           {activeTab === 'view' && <ViewHoursTab branches={branches} />}
+          {activeTab === 'bulk-hours' && <BulkHoursEditTab branches={branches} onUpdate={fetchData} onMessage={showMessage} />}
           {activeTab === 'import' && <ImportBranches onMessage={showMessage} onImportComplete={fetchData} />}
           {activeTab === 'messages' && <MessagesTab branches={branches} onUpdate={fetchData} onMessage={showMessage} />}
+          {activeTab === 'reports' && <ReportsTab branches={branches} onUpdate={fetchData} onMessage={showMessage} />}
+          {activeTab === 'statistics' && <StatisticsTab onMessage={showMessage} />}
+          {activeTab === 'seo' && <SitemapGenerator />}
           {activeTab === 'settings' && <SettingsTab onMessage={showMessage} />}
         </main>
       </div>
@@ -178,6 +194,7 @@ const SuperAdmin = () => {
 const BranchesTab = ({ branches, onUpdate, onMessage }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingBranch, setEditingBranch] = useState(null);
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [managerBranches, setManagerBranches] = useState([]);
   const [managers, setManagers] = useState([]);
@@ -295,36 +312,128 @@ const BranchesTab = ({ branches, onUpdate, onMessage }) => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button className="btn" onClick={() => setShowAddForm(!showAddForm)}>
-          {showAddForm ? 'ביטול' : '+ הוסף סניף'}
-        </button>
+        <div className="actions-buttons-wrapper">
+          <button className="btn btn-bulk-edit" onClick={() => setShowBulkEdit(true)}>
+            <FaTable />
+            <span>עריכה מהירה</span>
+          </button>
+          <button className="btn" onClick={() => setShowAddForm(true)}>
+            + הוסף סניף
+          </button>
+        </div>
       </div>
 
-      {showAddForm && (
-        <BranchForm onSave={handleAdd} onCancel={() => setShowAddForm(false)} />
+      {/* Bulk Edit Modal */}
+      {showBulkEdit && (
+        <BulkEditModal
+          branches={branches}
+          onClose={() => setShowBulkEdit(false)}
+          onSave={async (updatedBranches) => {
+            try {
+              for (const branch of updatedBranches) {
+                await supabase
+                  .from('branches')
+                  .update({
+                    name: branch.name,
+                    address: branch.address,
+                    city: branch.city,
+                    phone: branch.phone,
+                    format: branch.format,
+                    branch_message: branch.branch_message
+                  })
+                  .eq('id', branch.id);
+              }
+              onMessage(`עודכנו ${updatedBranches.length} סניפים בהצלחה`, true);
+              setShowBulkEdit(false);
+              onUpdate();
+            } catch (err) {
+              onMessage('שגיאה בשמירת השינויים');
+            }
+          }}
+        />
+      )}
+
+
+      {/* Branch Edit Modal */}
+      {(showAddForm || editingBranch) && (
+        <div className="branch-modal-overlay" onClick={() => { setShowAddForm(false); setEditingBranch(null); }}>
+          <div className="branch-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="branch-modal-header">
+              <h2>{editingBranch ? 'עריכת סניף' : 'הוספת סניף חדש'}</h2>
+              <button 
+                className="modal-close-btn"
+                onClick={() => { setShowAddForm(false); setEditingBranch(null); }}
+                title="סגור"
+              >
+                <FaTimesIcon />
+              </button>
+            </div>
+            <div className="branch-modal-body">
+              {editingBranch ? (
+                <BranchForm
+                  branch={branches.find(b => b.id === editingBranch)}
+                  onSave={(data) => {
+                    handleUpdate(editingBranch, data);
+                    setEditingBranch(null);
+                  }}
+                  onCancel={() => setEditingBranch(null)}
+                />
+              ) : (
+                <BranchForm
+                  onSave={(data) => {
+                    handleAdd(data);
+                    setShowAddForm(false);
+                  }}
+                  onCancel={() => setShowAddForm(false)}
+                />
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="branches-grid-container">
         {filteredBranches.map(branch => (
           <div key={branch.id} className="item-card">
-            {editingBranch === branch.id ? (
-              <BranchForm
-                branch={branch}
-                onSave={(data) => handleUpdate(branch.id, data)}
-                onCancel={() => setEditingBranch(null)}
-              />
-            ) : (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                  <div style={{ flex: 1 }}>
-                    <h3>{branch.name}</h3>
-                    {getManagersForBranch(branch.id).map((mgr, idx) => (
-                      <p key={idx} style={{ color: '#666', fontSize: '14px', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <FaUser /> {mgr.name || mgr.phone}
-                      </p>
-                    ))}
-                    {branch.format && <p style={{ color: '#009245', fontSize: '12px', marginTop: '5px', fontWeight: 'bold' }}>{branch.format}</p>}
-                  </div>
+            <div className="branch-card-layout">
+              <div className="branch-card-info">
+                <div className="branch-card-header-info">
+                  <h3 className="branch-name-title">{branch.name}</h3>
+                  {branch.format && (
+                    <span className="branch-format-tag">{branch.format}</span>
+                  )}
+                </div>
+                
+                <div className="branch-details-compact">
+                  {branch.address && (
+                    <div className="branch-detail-row">
+                      <FaMapMarkerAlt className="detail-icon-small" />
+                      <span>{branch.address}</span>
+                    </div>
+                  )}
+                  {branch.city && (
+                    <div className="branch-detail-row branch-city-row">
+                      <span>{branch.city}</span>
+                    </div>
+                  )}
+                  {branch.phone && (
+                    <div className="branch-detail-row">
+                      <FaPhone className="detail-icon-small" />
+                      <span>{branch.phone}</span>
+                    </div>
+                  )}
+                  {getManagersForBranch(branch.id).length > 0 && (
+                    <div className="branch-managers-row">
+                      {getManagersForBranch(branch.id).map((mgr, idx) => (
+                        <span key={idx} className="manager-badge">
+                          <FaUser className="manager-icon-small" />
+                          <span>{mgr.name || mgr.phone}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
                   <div className="item-actions">
                     <button
                       className="icon-btn"
@@ -342,8 +451,6 @@ const BranchesTab = ({ branches, onUpdate, onMessage }) => {
                     </button>
                   </div>
                 </div>
-              </>
-            )}
           </div>
         ))}
       </div>
@@ -538,48 +645,56 @@ const BranchForm = ({ branch, onSave, onCancel }) => {
         </button>
       </div>
 
-      {/* Days Table */}
-      <div className="days-grid-container">
+      {/* Days Table - Compact Table Layout */}
+      <div className="days-compact-table">
+        <div className="compact-table-header">
+          <div className="compact-col-day">יום</div>
+          <div className="compact-col-times">שעות פעילות</div>
+        </div>
         {days.map((day) => (
-          <div key={day} className="day-item">
-            <div className="day-item-header">
-              <span>{dayNames[day]}</span>
+          <div key={day} className="compact-table-row">
+            <div className="compact-col-day">
+              <span className="day-name-compact">{dayNames[day]}</span>
             </div>
-            {day === 'sat' ? (
-              // Saturday - just checkbox
-              <label className="day-saturday-checkbox">
-                <input
-                  type="checkbox"
-                  checked={hours[activePeriod][day].openSaturday}
-                  onChange={(e) =>
-                    handleTimeChange(activePeriod, day, 'openSaturday', e.target.checked)
-                  }
-                  style={{ width: '22px', height: '22px', accentColor: '#009245', cursor: 'pointer', flexShrink: 0 }}
-                />
-                <span style={{ fontSize: '15px', fontWeight: 600, color: '#333' }}>פתוח במוצ״ש</span>
-              </label>
-            ) : (
-              // Regular days
-              <div className="day-time-inputs">
-                <input
-                  type="time"
-                  value={hours[activePeriod][day].open || ''}
-                  onChange={(e) => handleTimeChange(activePeriod, day, 'open', e.target.value)}
-                  step="1800"
-                  min="06:00"
-                  max="23:59"
-                />
-                <span style={{ color: '#999', flexShrink: 0 }}>-</span>
-                <input
-                  type="time"
-                  value={hours[activePeriod][day].close || ''}
-                  onChange={(e) => handleTimeChange(activePeriod, day, 'close', e.target.value)}
-                  step="1800"
-                  min="06:00"
-                  max="23:59"
-                />
-              </div>
-            )}
+            <div className="compact-col-times">
+              {day === 'sat' ? (
+                // Saturday - checkbox
+                <label className="saturday-checkbox-compact">
+                  <input
+                    type="checkbox"
+                    checked={hours[activePeriod][day].openSaturday}
+                    onChange={(e) =>
+                      handleTimeChange(activePeriod, day, 'openSaturday', e.target.checked)
+                    }
+                    style={{ width: '18px', height: '18px', accentColor: '#009245', cursor: 'pointer' }}
+                  />
+                  <span>פתוח במוצ״ש</span>
+                </label>
+              ) : (
+                // Regular days - inline
+                <div className="compact-time-inputs">
+                  <input
+                    type="time"
+                    value={hours[activePeriod][day].open || ''}
+                    onChange={(e) => handleTimeChange(activePeriod, day, 'open', e.target.value)}
+                    step="1800"
+                    min="06:00"
+                    max="23:59"
+                    className="compact-time-field"
+                  />
+                  <span className="time-separator-compact">—</span>
+                  <input
+                    type="time"
+                    value={hours[activePeriod][day].close || ''}
+                    onChange={(e) => handleTimeChange(activePeriod, day, 'close', e.target.value)}
+                    step="1800"
+                    min="06:00"
+                    max="23:59"
+                    className="compact-time-field"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -592,6 +707,128 @@ const BranchForm = ({ branch, onSave, onCancel }) => {
         </button>
       </div>
     </form>
+  );
+};
+
+// Bulk Edit Modal Component - Excel-like interface
+const BulkEditModal = ({ branches, onClose, onSave }) => {
+  const [editedBranches, setEditedBranches] = useState(
+    branches.map(b => ({
+      id: b.id,
+      name: b.name || '',
+      address: b.address || '',
+      city: b.city || '',
+      phone: b.phone || '',
+      format: b.format || '',
+      branch_message: b.branch_message || ''
+    }))
+  );
+  const [saving, setSaving] = useState(false);
+
+  const handleCellChange = (branchIndex, field, value) => {
+    const updated = [...editedBranches];
+    updated[branchIndex] = {
+      ...updated[branchIndex],
+      [field]: value
+    };
+    setEditedBranches(updated);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    await onSave(editedBranches);
+    setSaving(false);
+  };
+
+  return (
+    <div className="branch-modal-overlay" onClick={onClose}>
+      <div className="bulk-edit-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="branch-modal-header">
+          <h2>עריכה מהירה - כל הסניפים</h2>
+          <button className="modal-close-btn" onClick={onClose} title="סגור">
+            <FaTimesIcon />
+          </button>
+        </div>
+        <div className="bulk-edit-body">
+          <div className="bulk-edit-table-container">
+            <table className="bulk-edit-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '200px' }}>שם הסניף</th>
+                  <th style={{ width: '250px' }}>כתובת</th>
+                  <th style={{ width: '150px' }}>עיר</th>
+                  <th style={{ width: '120px' }}>טלפון</th>
+                  <th style={{ width: '120px' }}>פורמט</th>
+                  <th style={{ width: '300px' }}>הודעה</th>
+                </tr>
+              </thead>
+              <tbody>
+                {editedBranches.map((branch, index) => (
+                  <tr key={branch.id}>
+                    <td>
+                      <input
+                        type="text"
+                        value={branch.name}
+                        onChange={(e) => handleCellChange(index, 'name', e.target.value)}
+                        className="bulk-edit-input"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={branch.address}
+                        onChange={(e) => handleCellChange(index, 'address', e.target.value)}
+                        className="bulk-edit-input"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={branch.city}
+                        onChange={(e) => handleCellChange(index, 'city', e.target.value)}
+                        className="bulk-edit-input"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={branch.phone}
+                        onChange={(e) => handleCellChange(index, 'phone', e.target.value)}
+                        className="bulk-edit-input"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={branch.format}
+                        onChange={(e) => handleCellChange(index, 'format', e.target.value)}
+                        className="bulk-edit-input"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={branch.branch_message}
+                        onChange={(e) => handleCellChange(index, 'branch_message', e.target.value)}
+                        className="bulk-edit-input"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="bulk-edit-actions">
+            <button className="btn" onClick={handleSave} disabled={saving}>
+              {saving ? 'שומר...' : 'שמור שינויים'}
+            </button>
+            <button className="btn btn-secondary" onClick={onClose} disabled={saving}>
+              ביטול
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -1952,6 +2189,895 @@ const SettingsTab = ({ onMessage }) => {
           </button>
         </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const ReportsTab = ({ onUpdate, onMessage, branches }) => {
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState('open'); // 'all', 'open', 'pending', 'in_progress', 'closed'
+  const [closingReport, setClosingReport] = useState(null);
+  const [closeReason, setCloseReason] = useState('');
+  const [editingBranchId, setEditingBranchId] = useState(null);
+
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('branch_reports')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setReports(data || []);
+    } catch (err) {
+      console.error('Error fetching reports:', err);
+      onMessage('שגיאה בטעינת הדיווחים');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (reportId, newStatus) => {
+    try {
+      const { error } = await supabase
+        .from('branch_reports')
+        .update({ status: newStatus })
+        .eq('id', reportId);
+
+      if (error) throw error;
+      onMessage('הסטטוס עודכן בהצלחה', true);
+      fetchReports();
+    } catch (err) {
+      onMessage('שגיאה בעדכון הסטטוס');
+    }
+  };
+
+  const handleCloseReport = async () => {
+    if (!closeReason.trim()) {
+      alert('אנא הזן סיבה לסגירה');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('branch_reports')
+        .update({ 
+          status: 'closed',
+          closed_reason: closeReason.trim()
+        })
+        .eq('id', closingReport.id);
+
+      if (error) throw error;
+      onMessage('הדיווח נסגר בהצלחה', true);
+      setClosingReport(null);
+      setCloseReason('');
+      fetchReports();
+    } catch (err) {
+      onMessage('שגיאה בסגירת הדיווח');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('האם אתה בטוח שברצונך למחוק דיווח זה?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('branch_reports')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      onMessage('הדיווח נמחק בהצלחה', true);
+      fetchReports();
+    } catch (err) {
+      onMessage('שגיאה במחיקת הדיווח');
+    }
+  };
+
+  const dayNames = {
+    sun: 'ראשון',
+    mon: 'שני',
+    tue: 'שלישי',
+    wed: 'רביעי',
+    thu: 'חמישי',
+    fri: 'שישי',
+    sat: 'שבת'
+  };
+
+  const filteredReports = filterStatus === 'all' 
+    ? reports 
+    : filterStatus === 'open'
+    ? reports.filter(r => r.status === 'pending' || r.status === 'in_progress')
+    : reports.filter(r => r.status === filterStatus);
+
+  const openReportsCount = reports.filter(r => r.status === 'pending' || r.status === 'in_progress').length;
+
+  const getStatusBadge = (status) => {
+    const statuses = {
+      pending: { text: 'ממתין לטיפול', color: '#f39c12' },
+      in_progress: { text: 'בטיפול', color: '#3498db' },
+      closed: { text: 'סגור', color: '#95a5a6' }
+    };
+    const statusInfo = statuses[status] || statuses.pending;
+    return (
+      <span style={{
+        padding: '4px 10px',
+        borderRadius: '12px',
+        fontSize: '12px',
+        fontWeight: 600,
+        background: statusInfo.color + '20',
+        color: statusInfo.color,
+        fontFamily: 'Almoni, sans-serif'
+      }}>
+        {statusInfo.text}
+      </span>
+    );
+  };
+
+  if (loading) {
+    return <div style={{ textAlign: 'center', padding: '20px' }}>טוען...</div>;
+  }
+
+  return (
+    <div className="tab-content-wrapper">
+      <div style={{ marginBottom: '24px' }}>
+        <div className="reports-filters" style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'nowrap', alignItems: 'center', overflowX: 'auto', paddingBottom: '5px' }}>
+          <button
+            className={`btn btn-filter ${filterStatus === 'open' ? 'active' : ''}`}
+            onClick={() => setFilterStatus('open')}
+            style={{ 
+              background: filterStatus === 'open' ? '#e74c3c' : '#f8f9fa', 
+              color: filterStatus === 'open' ? 'white' : '#666',
+              border: filterStatus === 'open' ? 'none' : '1px solid #e0e0e0',
+              fontWeight: filterStatus === 'open' ? 600 : 500,
+              padding: '8px 16px',
+              borderRadius: '20px',
+              whiteSpace: 'nowrap',
+              fontSize: '14px',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            פניות פתוחות ({openReportsCount})
+          </button>
+          <button
+            className={`btn btn-filter ${filterStatus === 'all' ? 'active' : ''}`}
+            onClick={() => setFilterStatus('all')}
+            style={{ 
+              background: filterStatus === 'all' ? '#009245' : '#f8f9fa', 
+              color: filterStatus === 'all' ? 'white' : '#666',
+              border: filterStatus === 'all' ? 'none' : '1px solid #e0e0e0',
+              fontWeight: filterStatus === 'all' ? 600 : 500,
+              padding: '8px 16px',
+              borderRadius: '20px',
+              whiteSpace: 'nowrap',
+              fontSize: '14px',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            הכל ({reports.length})
+          </button>
+          <button
+            className={`btn btn-filter ${filterStatus === 'pending' ? 'active' : ''}`}
+            onClick={() => setFilterStatus('pending')}
+            style={{ 
+              background: filterStatus === 'pending' ? '#f39c12' : '#f8f9fa', 
+              color: filterStatus === 'pending' ? 'white' : '#666',
+              border: filterStatus === 'pending' ? 'none' : '1px solid #e0e0e0',
+              fontWeight: filterStatus === 'pending' ? 600 : 500,
+              padding: '8px 16px',
+              borderRadius: '20px',
+              whiteSpace: 'nowrap',
+              fontSize: '14px',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            ממתינים ({reports.filter(r => r.status === 'pending').length})
+          </button>
+          <button
+            className={`btn btn-filter ${filterStatus === 'in_progress' ? 'active' : ''}`}
+            onClick={() => setFilterStatus('in_progress')}
+            style={{ 
+              background: filterStatus === 'in_progress' ? '#3498db' : '#f8f9fa', 
+              color: filterStatus === 'in_progress' ? 'white' : '#666',
+              border: filterStatus === 'in_progress' ? 'none' : '1px solid #e0e0e0',
+              fontWeight: filterStatus === 'in_progress' ? 600 : 500,
+              padding: '8px 16px',
+              borderRadius: '20px',
+              whiteSpace: 'nowrap',
+              fontSize: '14px',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            בטיפול ({reports.filter(r => r.status === 'in_progress').length})
+          </button>
+          <button
+            className={`btn btn-filter ${filterStatus === 'closed' ? 'active' : ''}`}
+            onClick={() => setFilterStatus('closed')}
+            style={{ 
+              background: filterStatus === 'closed' ? '#95a5a6' : '#f8f9fa', 
+              color: filterStatus === 'closed' ? 'white' : '#666',
+              border: filterStatus === 'closed' ? 'none' : '1px solid #e0e0e0',
+              fontWeight: filterStatus === 'closed' ? 600 : 500,
+              padding: '8px 16px',
+              borderRadius: '20px',
+              whiteSpace: 'nowrap',
+              fontSize: '14px',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            סגורים ({reports.filter(r => r.status === 'closed').length})
+          </button>
+        </div>
+      </div>
+
+      {filteredReports.length === 0 ? (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '80px 40px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px'
+        }}>
+          <div style={{
+            width: '120px',
+            height: '120px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #f5f7fa 0%, #e8ecf0 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '30px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)'
+          }}>
+            <FaExclamationTriangle style={{
+              fontSize: '50px',
+              color: '#bdc3c7'
+            }} />
+          </div>
+          <h3 style={{ 
+            margin: '0 0 12px 0', 
+            color: '#7f8c8d', 
+            fontSize: '28px',
+            fontFamily: 'Almoni, sans-serif',
+            fontWeight: 700,
+            letterSpacing: '-0.5px'
+          }}>
+            אין פניות פתוחות
+          </h3>
+          <p style={{ 
+            margin: 0, 
+            color: '#95a5a6', 
+            fontSize: '16px',
+            fontFamily: 'Almoni, sans-serif',
+            lineHeight: '1.6',
+            maxWidth: '400px'
+          }}>
+            כל הפניות טופלו או נסגרו. מעולה!
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {filteredReports.map(report => (
+            <div key={report.id} className="item-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                    <h4 style={{ margin: 0, fontSize: '18px', fontFamily: 'Almoni, sans-serif' }}>{report.branch_name}</h4>
+                    {getStatusBadge(report.status)}
+                  </div>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <strong style={{ fontSize: '14px', color: '#666' }}>ימים:</strong>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px' }}>
+                      {report.days && report.days.map((day, idx) => (
+                        <span key={idx} style={{
+                          padding: '4px 10px',
+                          background: '#f8fff9',
+                          border: '1px solid #009245',
+                          borderRadius: '6px',
+                          fontSize: '13px',
+                          fontFamily: 'Almoni, sans-serif',
+                          color: '#009245'
+                        }}>
+                          {dayNames[day] || day}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '10px' }}>
+                    <strong style={{ fontSize: '14px', color: '#666' }}>תיאור:</strong>
+                    <p style={{ margin: '5px 0 0', color: '#333', fontSize: '15px', fontFamily: 'Almoni, sans-serif', whiteSpace: 'pre-wrap' }}>
+                      {report.message}
+                    </p>
+                  </div>
+
+                  {report.closed_reason && (
+                    <div style={{ marginTop: '10px', padding: '10px', background: '#f8f9fa', borderRadius: '8px' }}>
+                      <strong style={{ fontSize: '13px', color: '#666' }}>סיבת סגירה:</strong>
+                      <p style={{ margin: '5px 0 0', color: '#555', fontSize: '14px', fontFamily: 'Almoni, sans-serif' }}>
+                        {report.closed_reason}
+                      </p>
+                    </div>
+                  )}
+
+                  <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#999' }}>
+                    נוצר: {new Date(report.created_at).toLocaleString('he-IL', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+
+                <div className="item-actions" style={{ flexDirection: 'column', gap: '8px' }}>
+                  {report.branch_id && branches && branches.find(b => b.id === report.branch_id) && (
+                    <button
+                      className="icon-btn"
+                      onClick={() => setEditingBranchId(report.branch_id)}
+                      title="ערוך סניף"
+                      style={{ background: '#27ae60', color: 'white' }}
+                    >
+                      <FaBuilding />
+                    </button>
+                  )}
+                  {report.status !== 'closed' && (
+                    <>
+                      {report.status === 'pending' && (
+                        <button
+                          className="icon-btn"
+                          onClick={() => handleStatusChange(report.id, 'in_progress')}
+                          title="העבר לטיפול"
+                          style={{ background: '#3498db', color: 'white' }}
+                        >
+                          <FaEdit />
+                        </button>
+                      )}
+                      <button
+                        className="icon-btn"
+                        onClick={() => setClosingReport(report)}
+                        title="סגור דיווח"
+                        style={{ background: '#95a5a6', color: 'white' }}
+                      >
+                        <FaCheck />
+                      </button>
+                    </>
+                  )}
+                  <button
+                    className="icon-btn-danger"
+                    onClick={() => handleDelete(report.id)}
+                    title="מחק"
+                  >
+                    <FaTrash />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Close Report Modal */}
+      {closingReport && (
+        <div className="branch-modal-overlay" onClick={() => setClosingReport(null)}>
+          <div className="branch-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="branch-modal-header">
+              <h2>סגור דיווח</h2>
+              <button className="modal-close-btn" onClick={() => setClosingReport(null)} title="סגור">
+                <FaTimesIcon />
+              </button>
+            </div>
+            <div className="branch-modal-body">
+              <div className="form-group">
+                <label>סיבה לסגירה:</label>
+                <textarea
+                  value={closeReason}
+                  onChange={(e) => setCloseReason(e.target.value)}
+                  placeholder="פרט את הסיבה לסגירת הדיווח"
+                  rows={4}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '2px solid #e0e0e0',
+                    borderRadius: '8px',
+                    fontSize: '15px',
+                    fontFamily: 'Almoni, sans-serif',
+                    resize: 'vertical'
+                  }}
+                  required
+                />
+              </div>
+              <div className="form-actions">
+                <button className="btn" onClick={handleCloseReport}>
+                  סגור דיווח
+                </button>
+                <button className="btn btn-secondary" onClick={() => { setClosingReport(null); setCloseReason(''); }}>
+                  ביטול
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Branch Edit Modal from Reports */}
+      {editingBranchId && branches && (
+        <div className="branch-modal-overlay" onClick={() => setEditingBranchId(null)}>
+          <div className="branch-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="branch-modal-header">
+              <h2>עריכת סניף</h2>
+              <button 
+                className="modal-close-btn"
+                onClick={() => setEditingBranchId(null)}
+                title="סגור"
+              >
+                <FaTimesIcon />
+              </button>
+            </div>
+            <div className="branch-modal-body">
+              <BranchForm
+                branch={branches.find(b => b.id === editingBranchId)}
+                onSave={async (data) => {
+                  try {
+                    const { error } = await supabase
+                      .from('branches')
+                      .update(data)
+                      .eq('id', editingBranchId);
+                    if (error) throw error;
+                    onMessage('הסניף עודכן בהצלחה', true);
+                    setEditingBranchId(null);
+                    onUpdate();
+                  } catch (err) {
+                    onMessage('שגיאה בעדכון הסניף');
+                  }
+                }}
+                onCancel={() => setEditingBranchId(null)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const BulkHoursEditTab = ({ branches, onUpdate, onMessage }) => {
+  const [activePeriod, setActivePeriod] = useState('summer'); // 'summer' or 'winter'
+  const [editedBranches, setEditedBranches] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  // Initialize edited branches with existing hours
+  useEffect(() => {
+    const initial = {};
+    branches.forEach(branch => {
+      let hours = branch.hours || {};
+      if (typeof hours === 'string') {
+        try {
+          hours = JSON.parse(hours);
+        } catch (e) {
+          hours = {};
+        }
+      }
+      
+      const defaultHours = {
+        summer: {
+          sun: { open: '', close: '', openSaturday: false },
+          mon: { open: '', close: '' },
+          tue: { open: '', close: '' },
+          wed: { open: '', close: '' },
+          thu: { open: '', close: '' },
+          fri: { open: '', close: '' },
+          sat: { open: '', close: '', openSaturday: false }
+        },
+        winter: {
+          sun: { open: '', close: '', openSaturday: false },
+          mon: { open: '', close: '' },
+          tue: { open: '', close: '' },
+          wed: { open: '', close: '' },
+          thu: { open: '', close: '' },
+          fri: { open: '', close: '' },
+          sat: { open: '', close: '', openSaturday: false }
+        }
+      };
+
+      initial[branch.id] = {
+        ...defaultHours,
+        ...hours
+      };
+    });
+    setEditedBranches(initial);
+  }, [branches]);
+
+  const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  const dayNames = {
+    sun: 'ראשון',
+    mon: 'שני',
+    tue: 'שלישי',
+    wed: 'רביעי',
+    thu: 'חמישי',
+    fri: 'שישי',
+    sat: 'מוצ״ש'
+  };
+
+  const handleHourChange = (branchId, day, field, value) => {
+    setEditedBranches(prev => ({
+      ...prev,
+      [branchId]: {
+        ...prev[branchId],
+        [activePeriod]: {
+          ...prev[branchId][activePeriod],
+          [day]: {
+            ...prev[branchId][activePeriod][day],
+            [field]: value
+          }
+        }
+      }
+    }));
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const updates = [];
+
+      for (const branchId in editedBranches) {
+        const branch = branches.find(b => b.id === branchId);
+        if (!branch) continue;
+
+        // Merge with existing hours to preserve the other period
+        let existingHours = branch.hours || {};
+        if (typeof existingHours === 'string') {
+          try {
+            existingHours = JSON.parse(existingHours);
+          } catch (e) {
+            existingHours = {};
+          }
+        }
+
+        const updatedHours = {
+          ...existingHours,
+          [activePeriod]: editedBranches[branchId][activePeriod]
+        };
+
+        updates.push(
+          supabase
+            .from('branches')
+            .update({ hours: updatedHours })
+            .eq('id', branchId)
+        );
+      }
+
+      await Promise.all(updates);
+      onMessage(`עודכנו שעות עבור ${branches.length} סניפים בהצלחה`, true);
+      onUpdate();
+    } catch (err) {
+      console.error('Error saving hours:', err);
+      onMessage('שגיאה בשמירת השעות');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="tab-content-wrapper">
+      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 style={{ margin: 0, fontFamily: 'Almoni, sans-serif' }}>עריכת שעות המונית</h2>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'nowrap' }}>
+          <button
+            className={`btn ${activePeriod === 'summer' ? '' : 'btn-secondary'}`}
+            onClick={() => setActivePeriod('summer')}
+            style={{
+              background: activePeriod === 'summer' ? '#009245' : '#f8f9fa',
+              color: activePeriod === 'summer' ? 'white' : '#666',
+              border: '1px solid #e0e0e0',
+              padding: '12px 28px',
+              borderRadius: '8px',
+              fontWeight: 600,
+              fontFamily: 'Almoni, sans-serif',
+              whiteSpace: 'nowrap',
+              minWidth: '140px'
+            }}
+          >
+            ☀️ שעון קיץ
+          </button>
+          <button
+            className={`btn ${activePeriod === 'winter' ? '' : 'btn-secondary'}`}
+            onClick={() => setActivePeriod('winter')}
+            style={{
+              background: activePeriod === 'winter' ? '#009245' : '#f8f9fa',
+              color: activePeriod === 'winter' ? 'white' : '#666',
+              border: '1px solid #e0e0e0',
+              padding: '12px 28px',
+              borderRadius: '8px',
+              fontWeight: 600,
+              fontFamily: 'Almoni, sans-serif',
+              whiteSpace: 'nowrap',
+              minWidth: '140px'
+            }}
+          >
+            ❄️ שעון חורף
+          </button>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '20px' }}>
+        <button 
+          className="btn" 
+          onClick={handleSave} 
+          disabled={saving}
+          style={{ padding: '12px 24px', fontSize: '16px', fontWeight: 600 }}
+        >
+          {saving ? 'שומר...' : 'שמור כל השינויים'}
+        </button>
+      </div>
+
+      <div className="item-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 300px)' }}>
+          <table className="bulk-hours-table" style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'Almoni, sans-serif', minWidth: '1050px' }}>
+            <thead style={{ position: 'sticky', top: 0, background: '#f8f9fa', zIndex: 10 }}>
+              <tr>
+                <th style={{ padding: '8px', textAlign: 'right', fontWeight: 600, background: '#f8f9fa', borderBottom: '2px solid #e0e0e0', position: 'sticky', right: 0, background: '#f8f9fa', zIndex: 11, minWidth: '130px', fontSize: '14px' }}>
+                  שם הסניף
+                </th>
+                <th style={{ padding: '8px', textAlign: 'center', fontWeight: 600, background: '#f8f9fa', borderBottom: '2px solid #e0e0e0', position: 'sticky', right: '130px', background: '#f8f9fa', zIndex: 11, minWidth: '60px', fontSize: '14px' }}>
+                  מספר
+                </th>
+                {days.map(day => (
+                  <th key={day} style={{ padding: '12px', textAlign: 'center', fontWeight: 600, background: '#f8f9fa', borderBottom: '2px solid #e0e0e0', minWidth: day === 'sat' ? '150px' : '180px' }}>
+                    {dayNames[day]}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {branches.map((branch, index) => {
+                const isEven = index % 2 === 0;
+                const rowBg = isEven ? '#e8f5e9' : 'white';
+                return (
+                <tr key={branch.id} style={{ background: rowBg }}>
+                  <td style={{ padding: '8px', background: rowBg, borderBottom: '1px solid #f0f0f0', position: 'sticky', right: 0, zIndex: 9, fontWeight: 600, fontSize: '14px' }}>
+                    {branch.name}
+                  </td>
+                  <td style={{ padding: '8px', background: rowBg, borderBottom: '1px solid #f0f0f0', position: 'sticky', right: '130px', zIndex: 9, textAlign: 'center', fontWeight: 600, color: '#009245', fontSize: '14px' }}>
+                    {branch.branch_number || '-'}
+                  </td>
+                  {days.map(day => (
+                    <td key={day} style={{ padding: '8px', borderBottom: '1px solid #f0f0f0', background: rowBg }}>
+                      {day === 'sat' ? (
+                        <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={editedBranches[branch.id]?.[activePeriod]?.[day]?.openSaturday || false}
+                            onChange={(e) => handleHourChange(branch.id, day, 'openSaturday', e.target.checked)}
+                            style={{ width: '18px', height: '18px', accentColor: '#009245', cursor: 'pointer' }}
+                          />
+                          <span style={{ fontSize: '13px' }}>פתוח</span>
+                        </label>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
+                          <input
+                            type="time"
+                            value={editedBranches[branch.id]?.[activePeriod]?.[day]?.open || ''}
+                            onChange={(e) => handleHourChange(branch.id, day, 'open', e.target.value)}
+                            step="1800"
+                            style={{
+                              width: '75px',
+                              padding: '6px',
+                              border: '1px solid #e0e0e0',
+                              borderRadius: '4px',
+                              fontSize: '13px',
+                              fontFamily: 'Almoni, sans-serif'
+                            }}
+                          />
+                          <span style={{ fontSize: '14px', color: '#999' }}>—</span>
+                          <input
+                            type="time"
+                            value={editedBranches[branch.id]?.[activePeriod]?.[day]?.close || ''}
+                            onChange={(e) => handleHourChange(branch.id, day, 'close', e.target.value)}
+                            step="1800"
+                            style={{
+                              width: '75px',
+                              padding: '6px',
+                              border: '1px solid #e0e0e0',
+                              borderRadius: '4px',
+                              fontSize: '13px',
+                              fontFamily: 'Almoni, sans-serif'
+                            }}
+                          />
+                        </div>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style={{ marginTop: '20px' }}>
+        <button 
+          className="btn" 
+          onClick={handleSave} 
+          disabled={saving}
+          style={{ padding: '12px 24px', fontSize: '16px', fontWeight: 600 }}
+        >
+          {saving ? 'שומר...' : 'שמור כל השינויים'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const StatisticsTab = ({ onMessage }) => {
+  const [statistics, setStatistics] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStatistics();
+  }, []);
+
+  const fetchStatistics = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch all navigation clicks
+      const { data: clicks, error } = await supabase
+        .from('navigation_clicks')
+        .select('*')
+        .order('clicked_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Calculate statistics
+      const totalClicks = clicks.length;
+      
+      // Group by branch
+      const branchStats = {};
+      clicks.forEach(click => {
+        const key = click.branch_id || click.branch_name;
+        if (!branchStats[key]) {
+          branchStats[key] = {
+            branch_id: click.branch_id,
+            branch_name: click.branch_name,
+            count: 0
+          };
+        }
+        branchStats[key].count++;
+      });
+
+      // Convert to array and sort
+      const branchStatsArray = Object.values(branchStats).sort((a, b) => b.count - a.count);
+      
+      // Find most and least clicked
+      const mostClicked = branchStatsArray.length > 0 ? branchStatsArray[0] : null;
+      const leastClicked = branchStatsArray.length > 0 ? branchStatsArray[branchStatsArray.length - 1] : null;
+
+      setStatistics({
+        totalClicks,
+        branchStats: branchStatsArray,
+        mostClicked,
+        leastClicked
+      });
+    } catch (err) {
+      console.error('Error fetching statistics:', err);
+      onMessage('שגיאה בטעינת הסטטיסטיקות');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div style={{ textAlign: 'center', padding: '20px' }}>טוען סטטיסטיקות...</div>;
+  }
+
+  if (!statistics) {
+    return <div style={{ textAlign: 'center', padding: '20px' }}>אין נתונים להצגה</div>;
+  }
+
+  return (
+    <div className="tab-content-wrapper">
+      <h2 style={{ marginBottom: '24px', fontFamily: 'Almoni, sans-serif' }}>סטטיסטיקות ניווט Waze</h2>
+      
+      {/* Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+        {/* Total Clicks */}
+        <div className="item-card" style={{ textAlign: 'center', padding: '24px' }}>
+          <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#009245', marginBottom: '8px' }}>
+            {statistics.totalClicks}
+          </div>
+          <div style={{ fontSize: '16px', color: '#666', fontFamily: 'Almoni, sans-serif' }}>
+            סה"כ לחיצות ניווט
+          </div>
+        </div>
+
+        {/* Most Clicked */}
+        {statistics.mostClicked && (
+          <div className="item-card" style={{ padding: '24px' }}>
+            <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px', fontFamily: 'Almoni, sans-serif' }}>
+              הסניף הפופולרי ביותר
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#2c3e50', marginBottom: '4px', fontFamily: 'Almoni, sans-serif' }}>
+              {statistics.mostClicked.branch_name}
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#009245', fontFamily: 'Almoni, sans-serif' }}>
+              {statistics.mostClicked.count} לחיצות
+            </div>
+          </div>
+        )}
+
+        {/* Least Clicked */}
+        {statistics.leastClicked && statistics.leastClicked.branch_name !== statistics.mostClicked?.branch_name && (
+          <div className="item-card" style={{ padding: '24px' }}>
+            <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px', fontFamily: 'Almoni, sans-serif' }}>
+              הסניף הכי פחות פופולרי
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#2c3e50', marginBottom: '4px', fontFamily: 'Almoni, sans-serif' }}>
+              {statistics.leastClicked.branch_name}
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e74c3c', fontFamily: 'Almoni, sans-serif' }}>
+              {statistics.leastClicked.count} לחיצות
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Branch Statistics Table */}
+      <div className="item-card">
+        <h3 style={{ marginBottom: '20px', fontFamily: 'Almoni, sans-serif' }}>לחיצות לכל סניף</h3>
+        {statistics.branchStats.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            אין נתונים להצגה
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'Almoni, sans-serif' }}>
+              <thead>
+                <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #e0e0e0' }}>
+                  <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600', color: '#2c3e50' }}>
+                    שם הסניף
+                  </th>
+                  <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#2c3e50' }}>
+                    מספר לחיצות
+                  </th>
+                  <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#2c3e50' }}>
+                    אחוז מהסה"כ
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {statistics.branchStats.map((stat, index) => {
+                  const percentage = ((stat.count / statistics.totalClicks) * 100).toFixed(1);
+                  return (
+                    <tr key={index} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '12px', color: '#2c3e50' }}>
+                        {stat.branch_name}
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#009245' }}>
+                        {stat.count}
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'center', color: '#666' }}>
+                        {percentage}%
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

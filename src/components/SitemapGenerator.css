@@ -1,0 +1,151 @@
+.sitemap-generator {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Almoni Neue', Arial, sans-serif;
+  direction: rtl;
+}
+
+.sitemap-generator h2 {
+  color: #007237;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.sitemap-info {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-right: 4px solid #007237;
+}
+
+.sitemap-info p {
+  margin: 5px 0;
+  color: #666;
+}
+
+.sitemap-stats {
+  background: #e8f5e8;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.sitemap-stats p {
+  margin: 5px 0;
+  color: #007237;
+}
+
+.sitemap-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.sitemap-actions .btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.sitemap-actions .btn-primary {
+  background: #007237;
+  color: white;
+}
+
+.sitemap-actions .btn-primary:hover:not(:disabled) {
+  background: #009245;
+}
+
+.sitemap-actions .btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.sitemap-actions .btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.sitemap-actions .btn-secondary:hover {
+  background: #5a6268;
+}
+
+.sitemap-preview {
+  margin-top: 20px;
+}
+
+.sitemap-preview h3 {
+  color: #007237;
+  margin-bottom: 10px;
+}
+
+.sitemap-code {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  padding: 15px;
+  overflow-x: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.sitemap-instructions {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 20px;
+}
+
+.sitemap-instructions h3 {
+  color: #856404;
+  margin-bottom: 10px;
+}
+
+.sitemap-instructions ol {
+  margin: 10px 0;
+  padding-right: 20px;
+}
+
+.sitemap-instructions li {
+  margin: 5px 0;
+  color: #856404;
+}
+
+.sitemap-instructions code {
+  background: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  color: #007237;
+}
+
+@media (max-width: 768px) {
+  .sitemap-generator {
+    padding: 15px;
+  }
+  
+  .sitemap-actions {
+    flex-direction: column;
+  }
+  
+  .sitemap-actions .btn {
+    width: 100%;
+  }
+  
+  .sitemap-stats {
+    flex-direction: column;
+  }
+}

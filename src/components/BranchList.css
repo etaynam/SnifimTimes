@@ -8,6 +8,7 @@
 
 /* Global Messages */
 .global-messages-container {
+  width: 100%;
   max-width: 1400px;
   margin: 0 auto 1.5rem;
   display: flex;
@@ -81,6 +82,7 @@
 
 /* Filters Section */
 .branch-list-filters {
+  width: 100%;
   max-width: 1400px;
   margin: 0 auto 2rem;
   background: #fafdfb;
@@ -122,7 +124,8 @@
 
 .search-input {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 10rem;
+  padding: 0.75rem 1rem 0.75rem 1rem;
+  padding-right: calc(1rem + 1.2rem + 0.5rem + 1rem);
   border: 2px solid #e0e0e0;
   border-radius: 12px;
   font-size: 1rem;
@@ -382,6 +385,7 @@
 
 /* Branches Grid */
 .branches-grid {
+  width: 100%;
   max-width: 1400px;
   margin: 0 auto;
   display: grid;
@@ -453,17 +457,32 @@
   .branches-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  .branch-hour-item.today.open {
+    display: flex;
+    align-items: center;
+  }
 }
 
 @media (min-width: 1025px) and (max-width: 1440px) {
   .branches-grid {
     grid-template-columns: repeat(3, 1fr);
   }
+  
+  .branch-hour-item.today.open {
+    display: flex;
+    align-items: center;
+  }
 }
 
 @media (min-width: 1441px) {
   .branches-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .branch-hour-item.today.open {
+    display: flex;
+    align-items: center;
   }
 }
 
@@ -500,7 +519,18 @@
   gap: 1rem;
 }
 
-.branch-name {
+.branch-name-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: color 0.3s ease;
+}
+
+.branch-name-link:hover {
+  color: #009245;
+}
+
+.branch-name-link .branch-name {
   margin: 0;
   font-size: 1.3rem;
   font-weight: 700;
@@ -522,36 +552,86 @@
 
 .branch-address {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem;
   color: #555;
   font-size: 0.95rem;
   font-family: 'Almoni', sans-serif;
   line-height: 1.3;
   margin-top: 0;
+  flex-wrap: wrap;
 }
 
 .address-icon {
   color: #27ae60;
   font-size: 0.9rem;
-  margin-top: 0.2rem;
   flex-shrink: 0;
 }
 
-.branch-phone {
+.waze-navigate-btn-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #33ccff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: 'Almoni', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  margin-top: 16px;
+  box-shadow: 0 2px 8px rgba(51, 204, 255, 0.2);
+}
+
+.waze-navigate-btn-bottom:hover {
+  background: #00aaff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(51, 204, 255, 0.4);
+}
+
+.waze-navigate-btn-bottom:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(51, 204, 255, 0.3);
+}
+
+.waze-icon-img {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.branch-phone-city {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   color: #555;
   font-size: 0.9rem;
   font-family: 'Almoni', sans-serif;
-  margin-top: 0.1rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .phone-icon {
   color: #27ae60;
   font-size: 0.85rem;
   flex-shrink: 0;
+}
+
+.phone-city-separator {
+  color: #ccc;
+  margin: 0 0.25rem;
+  font-size: 0.9rem;
+}
+
+.branch-city {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  font-family: 'Almoni', sans-serif;
 }
 
 .branch-card-body {
@@ -570,10 +650,210 @@
   line-height: 1.5;
 }
 
-.branch-city {
-  color: #7f8c8d;
-  font-size: 0.9rem;
+/* Report Error Link */
+.report-error-link {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 0.85rem;
   font-family: 'Almoni', sans-serif;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-top: 8px;
+  transition: color 0.3s ease;
+  width: 100%;
+  text-align: center;
+}
+
+.report-error-link:hover {
+  color: #009245;
+}
+
+/* Report Modal */
+.report-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.report-modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+.report-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 2px solid #e0e0e0;
+  background: linear-gradient(135deg, #009245, #00c853);
+  color: white;
+  border-radius: 16px 16px 0 0;
+}
+
+.report-modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-family: 'Almoni', sans-serif;
+}
+
+.report-form {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.report-branch-name {
+  padding: 12px;
+  background: #f8fff9;
+  border: 2px solid #009245;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: 'Almoni', sans-serif;
+  color: #2c3e50;
+}
+
+.report-label {
+  display: block;
+  font-weight: 600;
+  font-size: 15px;
+  color: #2c3e50;
+  margin-bottom: 10px;
+  font-family: 'Almoni', sans-serif;
+}
+
+.char-count {
+  font-weight: normal;
+  color: #999;
+  font-size: 13px;
+  margin-right: 5px;
+}
+
+.report-days-selection {
+  display: flex;
+  flex-direction: column;
+}
+
+.days-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.day-checkbox-label {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background: #f8f9fa;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Almoni', sans-serif;
+  font-size: 14px;
+}
+
+.day-checkbox-label:hover {
+  background: #f8fff9;
+  border-color: #009245;
+}
+
+.day-checkbox-label input:checked ~ span {
+  color: #009245;
+  font-weight: 600;
+}
+
+.report-message-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.report-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Almoni', sans-serif;
+  resize: vertical;
+  transition: all 0.3s ease;
+}
+
+.report-textarea:focus {
+  outline: none;
+  border-color: #009245;
+  box-shadow: 0 0 0 3px rgba(0, 146, 69, 0.1);
+}
+
+.report-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-start;
+  margin-top: 10px;
+}
+
+.report-thank-you {
+  padding: 40px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.thank-you-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #009245, #00c853);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.report-thank-you h2 {
+  margin: 0 0 10px;
+  color: #2c3e50;
+  font-family: 'Almoni', sans-serif;
+  font-size: 24px;
+}
+
+.report-thank-you p {
+  margin: 0;
+  color: #666;
+  font-size: 16px;
+  font-family: 'Almoni', sans-serif;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .info-icon {
@@ -636,6 +916,11 @@
   font-weight: 700;
   font-family: 'Almoni', sans-serif;
   color: #2c3e50;
+}
+
+.branch-hour-item.today.open {
+  display: flex;
+  align-items: center;
 }
 
 .day-name {

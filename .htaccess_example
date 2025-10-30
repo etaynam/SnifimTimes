@@ -1,0 +1,21 @@
+# .htaccess example for WordPress site (m-shuk.net)
+# Add these redirects to your main WordPress site's .htaccess file
+# This will redirect old branch URLs to the new React app
+
+# Redirect old branch URLs to new React app
+RewriteEngine On
+
+# Redirect specific branch pages to React app
+RewriteRule ^stores/([^/]+)/?$ https://snfm.m-shuk.net/branch/$1 [R=301,L]
+
+# Redirect branches listing page
+RewriteRule ^branches/?$ https://snfm.m-shuk.net/ [R=301,L]
+
+# Redirect any other branch-related URLs
+RewriteRule ^branch/([^/]+)/?$ https://snfm.m-shuk.net/branch/$1 [R=301,L]
+
+# Optional: Redirect old API endpoints if they exist
+# RewriteRule ^api/branches/?$ https://snfm.m-shuk.net/api/branches [R=301,L]
+
+# Keep other WordPress functionality intact
+# Don't add any rules that might interfere with WordPress

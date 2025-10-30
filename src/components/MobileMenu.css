@@ -1,0 +1,242 @@
+/* Mobile Menu Overlay */
+.mobile-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9998;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Mobile Menu Container */
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 85%;
+  max-width: 400px;
+  height: 100vh;
+  background: white;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
+  animation: slideInFromRight 0.3s ease;
+  overflow-y: auto;
+}
+
+.mobile-menu.open {
+  animation: slideInFromRight 0.3s ease;
+}
+
+/* כפתור סגירה */
+.mobile-menu-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 52px;
+  height: 52px;
+  background: #ffc107;
+  border: none;
+  border-radius: 0;
+  color: #2c3e50;
+  font-size: 26px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  transition: all 0.3s ease;
+  font-family: 'Almoni', sans-serif;
+}
+
+.mobile-menu-close:hover {
+  background: #ffb300;
+  transform: scale(1.1);
+}
+
+/* לוגו */
+.mobile-menu-logo {
+  padding: 80px 24px 24px 24px;
+  text-align: center;
+  border-bottom: 2px solid #009245;
+}
+
+.mobile-logo-img {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* CTA - קריאה לפעולה */
+.mobile-menu-cta-wrapper {
+  width: 100%;
+}
+
+.mobile-menu-cta {
+  background: #009245;
+  color: white;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  font-family: 'Almoni', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  border: none;
+  width: 100%;
+  text-align: center;
+}
+
+.mobile-menu-cta:hover {
+  background: #007a38;
+}
+
+.cta-highlight {
+  color: #ffc107;
+}
+
+.whatsapp-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+/* ניווט */
+.mobile-menu-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.mobile-menu-item {
+  padding: 18px 24px;
+  color: #007237;
+  text-decoration: none;
+  font-family: 'Almoni', sans-serif;
+  font-weight: 300;
+  font-size: 24px;
+  transition: all 0.3s ease;
+  display: block;
+  cursor: pointer;
+}
+
+.mobile-menu-item:hover {
+  background: #009245;
+  color: white;
+}
+
+.mobile-menu-item.active {
+  color: #009245;
+  font-weight: 500;
+}
+
+/* קו מפריד */
+.mobile-menu-divider {
+  width: 100%;
+  height: 1px;
+  background: #009245;
+  margin: 0;
+}
+
+/* אייקוני רשתות חברתיות */
+.mobile-menu-social {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  border-top: 2px solid #009245;
+  background: #f8f9fa;
+}
+
+.social-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #009245;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.social-icon:hover {
+  background: #007a38;
+  transform: scale(1.1);
+}
+
+/* אנימציות */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToRight {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.mobile-menu-overlay.closing {
+  animation: fadeOut 0.3s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .mobile-menu {
+    width: 85%;
+  }
+  
+  .mobile-menu-item {
+    font-size: 21.6px;
+    padding: 16px 24px;
+  }
+  
+  .mobile-menu-cta {
+    font-size: 16px;
+    padding: 14px 24px;
+  }
+  
+  .mobile-logo-img {
+    height: 50px;
+  }
+}
+
+/* סגירת התפריט */
+.mobile-menu.closing {
+  animation: slideOutToRight 0.3s ease;
+}

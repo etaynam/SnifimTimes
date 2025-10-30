@@ -1,0 +1,494 @@
+.branch-details-container {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 2rem;
+  direction: rtl;
+  font-family: 'Almoni', sans-serif;
+}
+
+.branch-details-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Loading & Error States */
+.branch-details-loading,
+.branch-details-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  gap: 1.5rem;
+}
+
+.branch-details-error h2 {
+  color: #c0392b;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.breadcrumb a {
+  color: #009245;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.breadcrumb a:hover {
+  color: #007237;
+  text-decoration: underline;
+}
+
+.breadcrumb-separator {
+  color: #999;
+}
+
+.breadcrumb-current {
+  color: #333;
+  font-weight: 600;
+}
+
+/* Branch Header */
+.branch-details-header {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.branch-header-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.branch-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.branch-details-title {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.waze-btn-header {
+  background: #009245;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: 'Almoni', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 146, 69, 0.3);
+}
+
+.waze-btn-header:hover {
+  background: #007237;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 146, 69, 0.4);
+}
+
+.waze-icon-header {
+  width: 18px;
+  height: 18px;
+}
+
+.branch-details-format {
+  background: #e8f5e9;
+  color: #009245;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.branch-details-message {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  color: #c0392b;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-top: 1rem;
+}
+
+/* Info Cards Grid */
+.branch-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.branch-info-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.branch-info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.info-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.address-card .info-card-icon {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.phone-card .info-card-icon {
+  background: #e8f5e9;
+  color: #009245;
+}
+
+.city-card .info-card-icon {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.info-card-content h3 {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-card-content p {
+  font-size: 1.1rem;
+  color: #2c3e50;
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+
+.phone-link {
+  color: #009245;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.phone-link:hover {
+  color: #007237;
+  text-decoration: underline;
+}
+
+/* Hours Section */
+.branch-hours-section {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.hours-section-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.hours-section-header h2 {
+  font-size: 1.8rem;
+  color: #2c3e50;
+  margin: 0;
+  font-weight: 700;
+}
+
+.hours-section-header .attention-icon {
+  font-size: 1.5rem;
+  color: #009245;
+}
+
+.period-badge {
+  background: #e8f5e9;
+  color: #009245;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-right: auto;
+}
+
+.hours-list-two-columns {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.hours-list-item {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 8px;
+  background: #fafafa;
+  transition: background 0.3s ease;
+  gap: 0.5rem;
+}
+
+.hours-list-item.today {
+  background: #e8f5e9;
+  border: 2px solid #009245;
+}
+
+.hours-list-item.today.open {
+  background: #e8f5e9;
+  border-color: #27ae60;
+}
+
+.hours-day-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #2c3e50;
+  min-width: 100px;
+}
+
+.hours-time-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.hours-time {
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 500;
+  text-align: right;
+  direction: ltr;
+  margin-right: 0.5rem;
+}
+
+.hours-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.status-indicator {
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-indicator.open {
+  background: #27ae60;
+  color: white;
+}
+
+.status-indicator.closed {
+  background: #e74c3c;
+  color: white;
+}
+
+.closing-soon-badge {
+  background: #009245;
+  color: white;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Actions */
+.branch-details-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.waze-btn-large {
+  background: #009245;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-family: 'Almoni', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 146, 69, 0.3);
+}
+
+.waze-btn-large:hover {
+  background: #007237;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 146, 69, 0.4);
+}
+
+.waze-icon-large {
+  width: 24px;
+  height: 24px;
+}
+
+.report-error-btn {
+  background: transparent;
+  color: #009245;
+  border: 2px solid #009245;
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-family: 'Almoni', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.report-error-btn:hover {
+  background: #009245;
+  color: white;
+}
+
+/* Back to List */
+.back-to-list-section {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #009245;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.back-link:hover {
+  color: #007237;
+  text-decoration: underline;
+}
+
+.back-to-list-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #009245;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: 'Almoni', sans-serif;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.back-to-list-btn:hover {
+  background: #007237;
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .branch-details-container {
+    padding: 1rem;
+  }
+
+  .branch-details-title {
+    font-size: 2rem;
+  }
+
+  .branch-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .branch-header-main {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hours-section-header {
+    flex-wrap: wrap;
+  }
+
+  .period-badge {
+    margin-right: 0;
+  }
+
+  .hours-list-two-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .hours-list-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .hours-time {
+    text-align: right;
+  }
+
+  .hours-status {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
